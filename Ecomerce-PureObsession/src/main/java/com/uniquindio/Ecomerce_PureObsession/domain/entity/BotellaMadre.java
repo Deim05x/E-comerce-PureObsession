@@ -7,30 +7,29 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class BotellaMadre {
-    private final UUID id; // Identificador final
+    private final UUID id;
     private final Fragancia fragancia;
+    private final Volumen volumenOriginal;
     private Volumen volumenDisponible;
 
-    public BotellaMadre(UUID id, Fragancia fragancia, Volumen volumenInicial) {
+    public BotellaMadre(UUID id, Fragancia fragancia, Volumen volumenOriginal) {
         this.id = id;
         this.fragancia = fragancia;
-        this.volumenDisponible = volumenInicial;
+        this.volumenOriginal = volumenOriginal;
+        this.volumenDisponible = volumenOriginal;
     }
 
-    // Comportamiento del dominio que aplica la regla de negocio para los Decants
     public void extraerParaDecant(Volumen volumenSolicitado) {
         if (volumenSolicitado.mililitros() > this.volumenDisponible.mililitros()) {
-            throw new ReglaDominioException("Un Decant no puede crearse si el volumen solicitado (" + volumenSolicitado.mililitros() + "ml) es mayor al volumen disponible en la Botella Madre (" + this.volumenDisponible.mililitros() + "ml).");
+            throw new ReglaDominioException("Un Decant no puede crearse si el volumen solicitado es mayor al volumen disponible en la Botella Madre.");
         }
-        // Se crea un nuevo Value Object de volumen ya que son inmutables
         this.volumenDisponible = new Volumen(this.volumenDisponible.mililitros() - volumenSolicitado.mililitros());
     }
 
     public UUID getId() { return id; }
     public Fragancia getFragancia() { return fragancia; }
+    public Volumen getVolumenOriginal() { return volumenOriginal; }
     public Volumen getVolumenDisponible() { return volumenDisponible; }
-
-
 
     @Override
     public boolean equals(Object o) {

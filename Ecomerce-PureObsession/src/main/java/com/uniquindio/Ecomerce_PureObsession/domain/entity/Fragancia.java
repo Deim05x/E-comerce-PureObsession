@@ -2,54 +2,46 @@ package com.uniquindio.Ecomerce_PureObsession.domain.entity;
 
 import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.Concentracion;
 import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.FamiliaOlfativa;
+import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.PiramideOlfativa;
 import com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException;
 
 import java.util.Objects;
 import java.util.UUID;
 
 public class Fragancia {
-    private final UUID id; // Identificador final
+    private final UUID id;
     private final String nombre;
     private final FamiliaOlfativa familiaOlfativa;
     private Concentracion concentracion;
+    private PiramideOlfativa piramideOlfativa;
     private boolean publicada;
 
-    public Fragancia(UUID id, String nombre, FamiliaOlfativa familiaOlfativa, Concentracion concentracion) {
+    public Fragancia(UUID id, String nombre, FamiliaOlfativa familiaOlfativa, Concentracion concentracion, PiramideOlfativa piramideOlfativa) {
         this.id = id;
         this.nombre = nombre;
         this.familiaOlfativa = familiaOlfativa;
         this.concentracion = concentracion;
+        this.piramideOlfativa = piramideOlfativa;
         this.publicada = false;
     }
 
-    // Comportamiento del dominio que aplica la regla de negocio
+
     public void publicar() {
         if (this.concentracion == null) {
-            throw new ReglaDominioException("Toda Fragancia debe tener una Concentración definida antes de ser publicada en el catálogo.");
+            throw new ReglaDominioException("Toda fragancia publicada en el catálogo debe tener una Concentración definida.");
+        }
+        if (this.piramideOlfativa == null) {
+            throw new ReglaDominioException("Una fragancia publicada debe tener una Pirámide Olfativa válida.");
         }
         this.publicada = true;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public FamiliaOlfativa getFamiliaOlfativa() {
-        return familiaOlfativa;
-    }
-
-    public Concentracion getConcentracion() {
-        return concentracion;
-    }
-
-    public boolean isPublicada() {
-        return publicada;
-    }
-
+    public UUID getId() { return id; }
+    public String getNombre() { return nombre; }
+    public FamiliaOlfativa getFamiliaOlfativa() { return familiaOlfativa; }
+    public Concentracion getConcentracion() { return concentracion; }
+    public PiramideOlfativa getPiramideOlfativa() { return piramideOlfativa; }
+    public boolean isPublicada() { return publicada; }
 
     @Override
     public boolean equals(Object o) {
