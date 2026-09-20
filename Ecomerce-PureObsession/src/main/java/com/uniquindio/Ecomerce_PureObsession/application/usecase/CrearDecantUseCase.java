@@ -17,6 +17,19 @@ public class CrearDecantUseCase {
         return new SolicitudDecant(botellaMadreId, mililitros);
     }
 
+    /**
+     * Confirma la creación una vez que el inventario haya reservado el volumen solicitado.
+     */
+    public DecantCreado confirmar(SolicitudDecant solicitud) {
+        if (solicitud == null) {
+            throw new IllegalArgumentException("La solicitud de decant es obligatoria.");
+        }
+        return new DecantCreado(UUID.randomUUID(), solicitud.botellaMadreId(), solicitud.mililitros());
+    }
+
     public record SolicitudDecant(UUID botellaMadreId, int mililitros) {
+    }
+
+    public record DecantCreado(UUID id, UUID botellaMadreId, int mililitros) {
     }
 }
