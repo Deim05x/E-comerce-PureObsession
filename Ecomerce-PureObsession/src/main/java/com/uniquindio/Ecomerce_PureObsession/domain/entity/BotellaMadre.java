@@ -12,11 +12,15 @@ public class BotellaMadre {
     private final Volumen volumenOriginal;
     private Volumen volumenDisponible;
 
-    public BotellaMadre(UUID id, Fragancia fragancia, Volumen volumenOriginal) {
+    private BotellaMadre(UUID id, Fragancia fragancia, Volumen volumenOriginal) {
         this.id = id;
         this.fragancia = fragancia;
         this.volumenOriginal = volumenOriginal;
         this.volumenDisponible = volumenOriginal;
+    }
+
+    public static BotellaMadre crear(UUID id, Fragancia fragancia, Volumen volumenOriginal) {
+        return new BotellaMadre(id, fragancia, volumenOriginal);
     }
 
     public void extraerParaDecant(Volumen volumenSolicitado) {

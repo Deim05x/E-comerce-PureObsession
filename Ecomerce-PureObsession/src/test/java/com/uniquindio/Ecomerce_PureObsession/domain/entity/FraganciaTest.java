@@ -19,9 +19,9 @@ class FraganciaTest {
         UUID mismoId = UUID.randomUUID();
         PiramideOlfativa piramide = new PiramideOlfativa("Bergamota", "Jazmín", "Almizcle");
 
-        Fragancia original = new Fragancia(mismoId, "Sauvage", FamiliaOlfativa.AMADERADA,
+        Fragancia original = Fragancia.crear(mismoId, "Sauvage", FamiliaOlfativa.AMADERADA,
                 Concentracion.EAU_DE_TPOILETTE, piramide);
-        Fragancia otra = new Fragancia(mismoId, "Otro nombre", FamiliaOlfativa.CITRICA,
+        Fragancia otra = Fragancia.crear(mismoId, "Otro nombre", FamiliaOlfativa.CITRICA,
                 Concentracion.EXTRAIT_DE_PARFUM, piramide);
 
         // Act & Assert
@@ -32,7 +32,7 @@ class FraganciaTest {
     void noDebePermitirPublicarUnaFraganciaSinConcentracionDefinida() {
         // Arrange
         PiramideOlfativa piramide = new PiramideOlfativa("Bergamota", "Jazmín", "Almizcle");
-        Fragancia fragancia = new Fragancia(UUID.randomUUID(), "Bleu", FamiliaOlfativa.AMADERADA,
+        Fragancia fragancia = Fragancia.crear(UUID.randomUUID(), "Bleu", FamiliaOlfativa.AMADERADA,
                 null, piramide);
 
         // Act & Assert

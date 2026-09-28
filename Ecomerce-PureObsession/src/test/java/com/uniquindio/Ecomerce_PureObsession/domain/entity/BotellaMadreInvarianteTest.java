@@ -15,14 +15,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class BotellaMadreInvarianteTest {
 
     private Fragancia unaFragancia() {
-        return new Fragancia(UUID.randomUUID(), "One Million", FamiliaOlfativa.AMADERADA,
+        return Fragancia.crear(UUID.randomUUID(), "One Million", FamiliaOlfativa.AMADERADA,
                 Concentracion.EAU_DE_PARFUM, new PiramideOlfativa("Naranja", "Canela", "Cuero"));
     }
 
     @Test
     void noDebePermitirExtraerUnDecantSiElVolumenSolicitadoSuperaElDisponible() {
         // Arrange
-        BotellaMadre botella = new BotellaMadre(UUID.randomUUID(), unaFragancia(), new Volumen(100));
+        BotellaMadre botella = BotellaMadre.crear(UUID.randomUUID(), unaFragancia(), new Volumen(100));
         botella.extraerParaDecant(new Volumen(70)); // deja 30 ml disponibles
 
         // Act & Assert
@@ -33,7 +33,7 @@ class BotellaMadreInvarianteTest {
     @Test
     void noDebePermitirCrearUnDecantConVolumenIgualOMayorAlDeLaBotellaMadre() {
         // Arrange
-        BotellaMadre botella = new BotellaMadre(UUID.randomUUID(), unaFragancia(), new Volumen(100));
+        BotellaMadre botella = BotellaMadre.crear(UUID.randomUUID(), unaFragancia(), new Volumen(100));
 
         // Act & Assert
         assertThrows(ReglaDominioException.class, () ->

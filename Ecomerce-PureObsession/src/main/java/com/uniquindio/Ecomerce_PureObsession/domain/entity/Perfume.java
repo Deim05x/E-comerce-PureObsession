@@ -11,11 +11,15 @@ public class Perfume {
     private final Volumen volumen;
     private boolean envolturaRegalo;
 
-    public Perfume(UUID id, Fragancia fragancia, Volumen volumen) {
+    private Perfume(UUID id, Fragancia fragancia, Volumen volumen) {
         this.id = id;
         this.fragancia = fragancia;
         this.volumen = volumen;
         this.envolturaRegalo = false;
+    }
+
+    public static Perfume crear(UUID id, Fragancia fragancia, Volumen volumen) {
+        return new Perfume(id, fragancia, volumen);
     }
 
     public void aplicarEnvolturaRegalo() {

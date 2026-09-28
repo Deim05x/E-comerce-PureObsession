@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class TesterTest {
 
     private Fragancia unaFragancia() {
-        return new Fragancia(UUID.randomUUID(), "One Million", FamiliaOlfativa.AMADERADA,
+        return Fragancia.crear(UUID.randomUUID(), "One Million", FamiliaOlfativa.AMADERADA,
                 Concentracion.EAU_DE_PARFUM, new PiramideOlfativa("Naranja", "Canela", "Cuero"));
     }
 
@@ -23,8 +23,8 @@ class TesterTest {
     void dosTestersConLaMismaIdentidadSonElMismo() {
         // Arrange
         UUID mismoId = UUID.randomUUID();
-        Tester original = new Tester(mismoId, unaFragancia());
-        Tester otro = new Tester(mismoId, unaFragancia());
+        Tester original = Tester.crear(mismoId, unaFragancia());
+        Tester otro = Tester.crear(mismoId, unaFragancia());
 
         // Act & Assert
         assertEquals(original, otro); // Entidad: igual por IDENTIDAD (mismo id)
@@ -33,7 +33,7 @@ class TesterTest {
     @Test
     void noDebePermitirAplicarEnvolturaDeRegaloAUnTester() {
         // Arrange
-        Tester tester = new Tester(UUID.randomUUID(), unaFragancia());
+        Tester tester = Tester.crear(UUID.randomUUID(), unaFragancia());
 
         // Act & Assert
         assertThrows(ReglaDominioException.class, tester::aplicarEnvolturaRegalo); // regla protegida

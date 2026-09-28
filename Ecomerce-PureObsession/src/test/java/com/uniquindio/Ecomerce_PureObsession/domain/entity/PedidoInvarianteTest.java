@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PedidoInvarianteTest {
 
     private LineaPedido unaLinea(double precio, int cantidad) {
-        return new LineaPedido(UUID.randomUUID(), UUID.randomUUID(), "One Million 10ml",
+        return LineaPedido.crear(UUID.randomUUID(), UUID.randomUUID(), "One Million 10ml",
                 new Precio(precio, "COP"), cantidad);
     }
 

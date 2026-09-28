@@ -13,7 +13,7 @@ public class LineaPedido {
     private final Precio precioUnitario;
     private final int cantidad;
 
-    public LineaPedido(UUID id, UUID itemId , String descripcionFragancia, Precio precioUnitario, int cantidad){
+    private LineaPedido(UUID id, UUID itemId , String descripcionFragancia, Precio precioUnitario, int cantidad){
         if (cantidad <= 0){
             throw new ReglaDominioException("La cantidad de una linea debe ser mayor a 0.");
         }
@@ -22,6 +22,10 @@ public class LineaPedido {
         this.descripcionFragrancia = descripcionFragancia;
         this.precioUnitario = precioUnitario;
         this.cantidad = cantidad;
+    }
+
+    public static LineaPedido crear(UUID id, UUID itemId, String descripcionFragancia, Precio precioUnitario, int cantidad) {
+        return new LineaPedido(id, itemId, descripcionFragancia, precioUnitario, cantidad);
     }
 
     public Precio calcularSubtotal() {
