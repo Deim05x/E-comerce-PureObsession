@@ -1,92 +1,30 @@
-# Glosario del Lenguaje Ubicuo - PureObsession
+# Lenguaje ubicuo — Pure Obsession
 
-## Conceptos Centrales
+Nicho: perfumería con venta de presentaciones completas, testers y fraccionamiento en decants.
 
-### Decant
-
-**Definición:** Porción de una fragancia original que ha sido extraída y envasada cuidadosamente en un frasco de menor volumen (ej. 5ml, 10ml) para su venta individual, permitiendo a los clientes probar el aroma sin adquirir la botella completa.
-
-**Precondiciones:** El volumen a extraer para crear el decant debe ser menor o igual al volumen remanente disponible en la botella original (botella madre).
-
-**No usar:** Muestra, Fracción, Sub-producto.
-
-**Ejemplo de uso en código:**
-
-```java
-public Decant extraerDecant(BotellaOriginal botella, int mililitrosSolicitados) {
-    botella.descontarVolumen(mililitrosSolicitados);
-    return new Decant(botella.getFragancia(), mililitrosSolicitados);
-}
-```
-
-### Familia Olfativa
-
-**Definición:** Categoría principal a la que pertenece el perfil aromático de una fragancia (ej. Amaderada, Cítrica, Floral, Gourmand). Es el criterio principal de clasificación en el catálogo para guiar la búsqueda del usuario.
-
-**Sinónimos aceptados:** Categoría olfativa.
-
-**No usar:** Categoría, Tipo de producto, Etiqueta.
-
-**Ejemplo de uso en código:**
-
-```java
-public List<Fragancia> filtrarCatalogo(FamiliaOlfativa familia) {
-    return repositorioFragancias.buscarPorFamilia(familia);
-}
-```
-
-### Concentracion
-
-**Definición:** El nivel de pureza y porcentaje de aceites esenciales presentes en la composición de la fragancia, lo cual determina su longevidad y proyección (ej. Eau de Toilette, Eau de Parfum, Extrait de Parfum).
-
-**Precondiciones:** Toda fragancia registrada en el sistema debe tener una concentración asignada obligatoriamente para calcular su precio base.
-
-**Ejemplo de uso en código:**
-
-```java
-if (fragancia.getConcentracion() == Concentracion.EXTRAIT_DE_PARFUM) {
-    fragancia.aplicarEtiquetaPremium();
-}
-```
-
-### Tester
-
-**Definición:** Botella de fragancia original provista por la casa fabricante en empaque genérico (caja de cartón blanca o café) concebida inicialmente para demostración. En la tienda se comercializa a un precio reducido respecto a la presentación regular, conteniendo exactamente el mismo líquido.
-
-**Precondiciones:** Un artículo catalogado como Tester no puede ser seleccionado por el cliente para la opción de "Envoltura de regalo".
-
-**No usar:** Muestra, Defectuoso, Usado, Saldo.
-
-**Ejemplo de uso en código:**
-
-```java
-public void agregarAlCarrito(Fragancia fragancia, boolean solicitarEnvoltura) {
-    if (fragancia.esTester() && solicitarEnvoltura) {
-        throw new RegaloInvalidoException("Un tester no incluye caja de lujo, no puede envolverse para regalo.");
-    }
-    carrito.agregar(fragancia);
-}
-```
-
-### Piramide Olfativa
-
-**Definición:** Estructura evolutiva de los aromas de la fragancia a lo largo del tiempo, dividida estrictamente en tres fases: Notas de Salida (primeros 15 min), Notas de Corazón (desarrollo) y Notas de Fondo (secado y fijación).
-
-**No usar:** Descripción del olor, Ingredientes, Composición.
-
-**Ejemplo de uso en código:**
-
-```java
-PiramideOlfativa piramide = new PiramideOlfativa();
-piramide.agregarNota(FaseOlfativa.FONDO, new Nota("Sándalo"));
-fragancia.asignarPiramide(piramide);
-```
-
-## Anti-patrones (Términos a EVITAR en nuestro proyecto)
-
-| No usar | Usar |
+| Término propio | Significado y uso |
 |---|---|
-| Categoria / TipoItem | FamiliaOlfativa |
-| Variante / Opcion | Concentracion |
-| Muestra | Decant / Tester |
-| AtributosAdicionales | PiramideOlfativa |
+| Decant | Frasco de menor volumen obtenido de una botella madre; hereda su fragancia y concentración. Tiene identidad propia y queda conservado por la botella. |
+| Botella madre | Inventario original del que se extraen decants. Distingue volumen original positivo y disponible que puede agotarse. |
+| Familia olfativa | Clasificación del perfil aromático: FLORAL, AMADERADA, GOURMAND, CITRICA u ORIENTAL. |
+| Concentración | Clasificación EAU_DE_PARFUM, EAU_DE_TOILETTE, EXTRAIT_DE_PARFUM o EAU_DE_COLOGNE. Es obligatoria al publicar, no al registrar un borrador. |
+| Tester | Presentación para demostración comercializada sin envoltura de regalo. No significa producto usado o defectuoso. |
+| Pirámide olfativa | Descripción de notas de salida, corazón y fondo; las tres son obligatorias cuando se construye el VO. |
+| Fragancia | Referencia aromática con identidad, nombre, familia, concentración y pirámide; se distingue de la botella física. |
+
+## Ejemplo con la API real
+
+```java
+var piramide = new PiramideOlfativa("Bergamota", "Lavanda", "Ambar");
+var fragancia = Fragancia.crear(UUID.randomUUID(), "Sauvage",
+        FamiliaOlfativa.AMADERADA, Concentracion.EAU_DE_PARFUM, piramide);
+fragancia.publicar();
+var botella = BotellaMadre.crear(UUID.randomUUID(), fragancia, new Volumen(100));
+var decant = botella.crearDecant(UUID.randomUUID(), new Volumen(10));
+// botella.getVolumenDisponible().mililitros() == 90
+// botella.getDecants() conserva el decant creado.
+```
+
+No usar Producto/Comprador/Vendedor/Compra como sustitutos de los términos propios. Comprador y vendedor sí nombran actores de los casos de uso, pero no cuentan como los cinco términos del nicho.
+
+Reglas completas: [reglas de negocio](docs/reglas-de-negocio.md).

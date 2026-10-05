@@ -1,5 +1,6 @@
 package com.uniquindio.Ecomerce_PureObsession.application.usecase;
 
+import com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException;
 import com.uniquindio.Ecomerce_PureObsession.application.dto.request.RegistrarBotellaMadreRequest;
 import com.uniquindio.Ecomerce_PureObsession.application.dto.response.BotellaMadreResponse;
 import com.uniquindio.Ecomerce_PureObsession.domain.entity.BotellaMadre;
@@ -19,6 +20,9 @@ public class RegistrarBotellaMadreUseCase {
     }
 
     public BotellaMadreResponse ejecutar(RegistrarBotellaMadreRequest request) {
+        if (request == null) {
+            throw new ReglaDominioException("La solicitud es obligatoria.");
+        }
         PiramideOlfativa piramide = new PiramideOlfativa(
                 request.notasSalida(), request.notasCorazon(), request.notasFondo());
 

@@ -15,8 +15,10 @@ public class Fragancia {
     private Concentracion concentracion;
     private PiramideOlfativa piramideOlfativa;
     private boolean publicada;
+    private boolean activa;
 
     private Fragancia(UUID id, String nombre, FamiliaOlfativa familiaOlfativa, Concentracion concentracion, PiramideOlfativa piramideOlfativa) {
+        if (id == null) throw new ReglaDominioException("La identidad es obligatoria.");
         if (nombre == null || nombre.isBlank()) {
             throw new ReglaDominioException("El nombre de la fragancia es obligatorio.");
         }
@@ -29,6 +31,7 @@ public class Fragancia {
         this.concentracion = concentracion;
         this.piramideOlfativa = piramideOlfativa;
         this.publicada = false;
+        this.activa = true;
     }
 
     public static Fragancia crear(UUID id, String nombre, FamiliaOlfativa familiaOlfativa, Concentracion concentracion, PiramideOlfativa piramideOlfativa) {
@@ -37,6 +40,9 @@ public class Fragancia {
 
 
     public void publicar() {
+        if (!this.activa) {
+            throw new ReglaDominioException("Una fragancia inactiva no puede publicarse en el catálogo.");
+        }
         if (this.concentracion == null) {
             throw new ReglaDominioException("Toda fragancia publicada en el catálogo debe tener una Concentración definida.");
         }
@@ -46,12 +52,24 @@ public class Fragancia {
         this.publicada = true;
     }
 
+    public void validarEliminacion(boolean tienePedidosActivos) {
+        if (tienePedidosActivos) {
+            throw new ReglaDominioException("No se puede eliminar una fragancia con pedidos activos; puede desactivarse.");
+        }
+    }
+
+    public void desactivar() {
+        this.activa = false;
+        this.publicada = false;
+    }
+
     public UUID getId() { return id; }
     public String getNombre() { return nombre; }
     public FamiliaOlfativa getFamiliaOlfativa() { return familiaOlfativa; }
     public Concentracion getConcentracion() { return concentracion; }
     public PiramideOlfativa getPiramideOlfativa() { return piramideOlfativa; }
     public boolean isPublicada() { return publicada; }
+    public boolean isActiva() { return activa; }
 
     @Override
     public boolean equals(Object o) {
