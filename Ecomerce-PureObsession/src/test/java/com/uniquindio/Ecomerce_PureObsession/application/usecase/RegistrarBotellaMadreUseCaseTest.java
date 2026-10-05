@@ -3,8 +3,10 @@ package com.uniquindio.Ecomerce_PureObsession.application.usecase;
 import com.uniquindio.Ecomerce_PureObsession.application.dto.request.RegistrarBotellaMadreRequest;
 import com.uniquindio.Ecomerce_PureObsession.application.dto.response.BotellaMadreResponse;
 import com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException;
+import com.uniquindio.Ecomerce_PureObsession.domain.repository.BotellaMadreRepository;
 import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.Concentracion;
 import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.FamiliaOlfativa;
+import com.uniquindio.Ecomerce_PureObsession.infrastructure.persistence.BotellaMadreRepositoryEnMemoria;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

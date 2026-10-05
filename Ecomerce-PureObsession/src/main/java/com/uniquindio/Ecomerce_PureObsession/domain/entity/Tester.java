@@ -9,10 +9,14 @@ public class Tester {
     private final Fragancia fragancia;
     private boolean envolturaRegalo;
 
-    public Tester(UUID id, Fragancia fragancia) {
+    private Tester(UUID id, Fragancia fragancia) {
         this.id = id;
         this.fragancia = fragancia;
         this.envolturaRegalo = false;
+    }
+
+    public static Tester crear(UUID id, Fragancia fragancia) {
+        return new Tester(id, fragancia);
     }
 
     public void aplicarEnvolturaRegalo() {

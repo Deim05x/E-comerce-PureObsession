@@ -16,13 +16,23 @@ public class Fragancia {
     private PiramideOlfativa piramideOlfativa;
     private boolean publicada;
 
-    public Fragancia(UUID id, String nombre, FamiliaOlfativa familiaOlfativa, Concentracion concentracion, PiramideOlfativa piramideOlfativa) {
+    private Fragancia(UUID id, String nombre, FamiliaOlfativa familiaOlfativa, Concentracion concentracion, PiramideOlfativa piramideOlfativa) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new ReglaDominioException("El nombre de la fragancia es obligatorio.");
+        }
+        if (familiaOlfativa == null) {
+            throw new ReglaDominioException("La familia olfativa es obligatoria.");
+        }
         this.id = id;
         this.nombre = nombre;
         this.familiaOlfativa = familiaOlfativa;
         this.concentracion = concentracion;
         this.piramideOlfativa = piramideOlfativa;
         this.publicada = false;
+    }
+
+    public static Fragancia crear(UUID id, String nombre, FamiliaOlfativa familiaOlfativa, Concentracion concentracion, PiramideOlfativa piramideOlfativa) {
+        return new Fragancia(id, nombre, familiaOlfativa, concentracion, piramideOlfativa);
     }
 
 
