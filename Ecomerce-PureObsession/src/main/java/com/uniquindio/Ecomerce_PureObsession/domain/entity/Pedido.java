@@ -20,6 +20,10 @@ public class Pedido {
     private Precio total;
 
     private Pedido(UUID id, UUID clienteId, List<LineaPedido> lineasIniciales) {
+        if (id == null || clienteId == null) {
+            throw new ReglaDominioException("El pedido y el cliente requieren identidad.");
+        }
+        validarLineas(lineasIniciales);
         this.id = id;
         this.clienteId = clienteId;
         this.lineas = new ArrayList<>(lineasIniciales);
@@ -40,8 +44,12 @@ public class Pedido {
         if ( this.estado != EstadoPedido.CREADO) {
             throw new ReglaDominioException("No se puede agregar líneas a un pedido que ya fue confirmado.");
         }
+        List<LineaPedido> candidatas = new ArrayList<>(lineas);
+        candidatas.add(linea);
+        validarLineas(candidatas);
+        Precio nuevoTotal = calcularTotal(candidatas);
         this.lineas.add(linea);
-        this.total = recalcularTotal();
+        this.total = nuevoTotal;
     }
 
     // Invariante 4: transiciones válidas de estado
@@ -67,8 +75,8 @@ public class Pedido {
     }
 
     public void cancelar() {
-        if (this.estado == EstadoPedido.ENVIADO || this.estado == EstadoPedido.ENTREGADO) {
-            throw new ReglaDominioException("Un pedido ya enviado o entregado no puede cancelarse.");
+        if (this.estado != EstadoPedido.CREADO && this.estado != EstadoPedido.CONFIRMADO) {
+            throw new ReglaDominioException("Solo un pedido creado o confirmado puede cancelarse.");
         }
         this.estado = EstadoPedido.CANCELADO;
     }
@@ -86,13 +94,32 @@ public class Pedido {
         return this.lineas.stream().anyMatch(l -> l.getItemId().equals(itemId));
     }
 
-    private Precio recalcularTotal() {
-        double suma = 0.0;
-        String moneda = lineas.isEmpty() ? "COP" : lineas.get(0).getPrecioUnitario().moneda();
-        for (LineaPedido linea : lineas) {
-            suma += linea.calcularSubtotal().precio();
+    public boolean contieneFragancia(UUID fraganciaId) {
+        return lineas.stream().anyMatch(l -> l.getFraganciaId().equals(fraganciaId));
+    }
+
+    private static void validarLineas(List<LineaPedido> lineas) {
+        if (lineas == null || lineas.isEmpty() || lineas.stream().anyMatch(Objects::isNull)) {
+            throw new ReglaDominioException("El pedido requiere al menos una línea válida.");
         }
-        return new Precio(suma, moneda);
+        String moneda = lineas.get(0).getPrecioUnitario().moneda();
+        if (lineas.stream().anyMatch(l -> !moneda.equals(l.getPrecioUnitario().moneda()))) {
+            throw new ReglaDominioException("Todas las líneas deben usar la misma moneda.");
+        }
+        if (lineas.stream().map(LineaPedido::getId).distinct().count() != lineas.size()) {
+            throw new ReglaDominioException("No se puede agregar dos veces la misma línea.");
+        }
+    }
+
+    private Precio recalcularTotal() { return calcularTotal(lineas); }
+
+    private static Precio calcularTotal(List<LineaPedido> lineas) {
+        java.math.BigDecimal suma = java.math.BigDecimal.ZERO;
+        for (LineaPedido linea : lineas) {
+            suma = suma.add(java.math.BigDecimal.valueOf(linea.getPrecioUnitario().precio())
+                    .multiply(java.math.BigDecimal.valueOf(linea.getCantidad())));
+        }
+        return new Precio(suma.doubleValue(), lineas.get(0).getPrecioUnitario().moneda());
     }
 
     public UUID getId() { return id; }

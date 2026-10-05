@@ -12,6 +12,7 @@ public class Resena {
     private final String comentario;
 
     private Resena(UUID id, UUID pedidoId, UUID clienteId, String comentario) {
+        if (id == null) throw new ReglaDominioException("La identidad es obligatoria.");
         if (comentario == null || comentario.isBlank()) {
             throw new ReglaDominioException("El comentario de la reseña es obligatorio.");
         }
@@ -22,6 +23,9 @@ public class Resena {
     }
 
     public static Resena crear(UUID id, Pedido pedido, UUID clienteId, String comentario) {
+        if (pedido == null || clienteId == null) {
+            throw new ReglaDominioException("El pedido y el cliente son obligatorios.");
+        }
         if (!pedido.getClienteId().equals(clienteId)) {
             throw new ReglaDominioException("Solo el cliente que realizó el pedido puede crear una reseña.");
         }

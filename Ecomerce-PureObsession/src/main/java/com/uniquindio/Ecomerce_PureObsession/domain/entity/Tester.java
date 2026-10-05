@@ -10,6 +10,8 @@ public class Tester {
     private boolean envolturaRegalo;
 
     private Tester(UUID id, Fragancia fragancia) {
+        if (id == null) throw new ReglaDominioException("La identidad es obligatoria.");
+        if (fragancia == null) throw new ReglaDominioException("La fragancia es obligatoria.");
         this.id = id;
         this.fragancia = fragancia;
         this.envolturaRegalo = false;

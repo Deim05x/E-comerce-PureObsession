@@ -53,4 +53,21 @@ class FraganciaTest {
         assertFalse(fragancia.isPublicada());
         assertThrows(ReglaDominioException.class, fragancia::publicar);
     }
+    @Test
+    void noDebePublicarSinPiramide() {
+        // Arrange
+        Fragancia fragancia = Fragancia.crear(UUID.randomUUID(), "Sauvage", FamiliaOlfativa.AMADERADA,
+                Concentracion.EAU_DE_PARFUM, null);
+        // Act & Assert
+        assertThrows(ReglaDominioException.class, fragancia::publicar);
+        assertFalse(fragancia.isPublicada());
+    }
+
+    @Test
+    void piramideDebeTenerLasTresFases() {
+        // Arrange / Act & Assert
+        assertThrows(ReglaDominioException.class, () -> new PiramideOlfativa(null, "Jazmin", "Ambar"));
+        assertThrows(ReglaDominioException.class, () -> new PiramideOlfativa("Bergamota", " ", "Ambar"));
+        assertThrows(ReglaDominioException.class, () -> new PiramideOlfativa("Bergamota", "Jazmin", ""));
+    }
 }

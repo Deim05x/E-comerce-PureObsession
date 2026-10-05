@@ -11,4 +11,5 @@ public interface PedidoRepository {
     List<Pedido> listarPorCliente(UUID clienteId);
     // Soporte para la Regla 8: ¿hay pedidos activos que contengan este item?
     boolean existePedidoActivoConItem(UUID itemId);
+    boolean existePedidoActivoConFragancia(UUID fraganciaId);
 }

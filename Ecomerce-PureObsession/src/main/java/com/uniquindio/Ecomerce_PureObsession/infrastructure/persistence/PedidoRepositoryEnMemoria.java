@@ -36,4 +36,9 @@ public class PedidoRepositoryEnMemoria implements PedidoRepository {
         return almacen.values().stream()
                 .anyMatch(p -> p.estaActivo() && p.contieneItem(itemId));
     }
+    @Override
+    public boolean existePedidoActivoConFragancia(UUID fraganciaId) {
+        return almacen.values().stream()
+                .anyMatch(p -> p.estaActivo() && p.contieneFragancia(fraganciaId));
+    }
 }

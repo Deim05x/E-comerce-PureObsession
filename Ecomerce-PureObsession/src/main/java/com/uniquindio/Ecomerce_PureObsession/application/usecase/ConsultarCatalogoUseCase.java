@@ -1,5 +1,6 @@
 package com.uniquindio.Ecomerce_PureObsession.application.usecase;
 
+import com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException;
 import com.uniquindio.Ecomerce_PureObsession.application.dto.request.ConsultarCatalogoRequest;
 import com.uniquindio.Ecomerce_PureObsession.application.dto.response.FraganciaCatalogoResponse;
 import com.uniquindio.Ecomerce_PureObsession.domain.entity.BotellaMadre;
@@ -20,8 +21,12 @@ public class ConsultarCatalogoUseCase {
     }
 
     public List<FraganciaCatalogoResponse> ejecutar(ConsultarCatalogoRequest request) {
+        if (request == null) {
+            throw new ReglaDominioException("La solicitud es obligatoria.");
+        }
         return botellaMadreRepository.listarTodas().stream()
                 .map(BotellaMadre::getFragancia)
+                .distinct()
                 .filter(Fragancia::isActiva)
                 .filter(Fragancia::isPublicada)
                 .filter(fragancia -> request.familiaOlfativa() == null

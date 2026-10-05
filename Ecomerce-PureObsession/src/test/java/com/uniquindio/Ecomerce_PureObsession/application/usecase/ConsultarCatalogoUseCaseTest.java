@@ -44,4 +44,16 @@ class ConsultarCatalogoUseCaseTest {
         return Fragancia.crear(UUID.randomUUID(), nombre, familiaOlfativa,
                 Concentracion.EAU_DE_PARFUM, new PiramideOlfativa("Bergamota", "Jazmín", "Almizcle"));
     }
+    @Test
+    void sinFiltroDebeListarSinDuplicarLaMismaFragancia() {
+        // Arrange
+        BotellaMadreRepository repo = new BotellaMadreRepositoryEnMemoria();
+        Fragancia fragancia = fragancia("Sauvage", FamiliaOlfativa.AMADERADA); fragancia.publicar();
+        repo.guardar(BotellaMadre.crear(UUID.randomUUID(), fragancia, new Volumen(100)));
+        repo.guardar(BotellaMadre.crear(UUID.randomUUID(), fragancia, new Volumen(100)));
+        // Act
+        var resultado = new ConsultarCatalogoUseCase(repo).ejecutar(new ConsultarCatalogoRequest(null));
+        // Assert
+        assertEquals(1, resultado.size());
+    }
 }

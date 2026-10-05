@@ -17,18 +17,19 @@ public class Decant {
         this.volumen = volumen;
     }
 
-    // Factory Method que garantiza las reglas al momento de crear
-    public static Decant crearDesdeBotellaMadre(UUID idDecant, BotellaMadre botella, Volumen volumenSolicitado) {
-        // Regla 2: Un Decant debe tener un volumen menor al de la presentación original
-        if (volumenSolicitado.mililitros() >= botella.getVolumenOriginal().mililitros()) {
-            throw new ReglaDominioException("Un Decant debe tener un volumen menor al de la presentación original de la fragancia.");
+    // Compatibilidad con la API existente: la raíz administra inventario y colección.
+    public static Decant crearDesdeBotellaMadre(UUID idDecant, BotellaMadre botella, Volumen solicitado) {
+        if (botella == null) {
+            throw new ReglaDominioException("La botella madre es obligatoria.");
         }
+        return botella.crearDecant(idDecant, solicitado);
+    }
 
-        // Regla 1: Validamos stock y restamos de la botella madre
-        botella.extraerParaDecant(volumenSolicitado);
-
-        // Regla 6: El decant conserva la misma fragancia (y por ende, la misma concentración) de la botella madre
-        return new Decant(idDecant, botella.getFragancia(), volumenSolicitado);
+    static Decant crearInterno(UUID id, Fragancia fragancia, Volumen volumen) {
+        if (id == null || fragancia == null || volumen == null) {
+            throw new ReglaDominioException("El decant requiere identidad, fragancia y volumen.");
+        }
+        return new Decant(id, fragancia, volumen);
     }
 
     public UUID getId() { return id; }

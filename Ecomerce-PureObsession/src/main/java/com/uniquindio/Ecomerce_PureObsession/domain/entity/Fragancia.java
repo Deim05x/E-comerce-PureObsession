@@ -18,6 +18,7 @@ public class Fragancia {
     private boolean activa;
 
     private Fragancia(UUID id, String nombre, FamiliaOlfativa familiaOlfativa, Concentracion concentracion, PiramideOlfativa piramideOlfativa) {
+        if (id == null) throw new ReglaDominioException("La identidad es obligatoria.");
         if (nombre == null || nombre.isBlank()) {
             throw new ReglaDominioException("El nombre de la fragancia es obligatorio.");
         }
@@ -49,6 +50,12 @@ public class Fragancia {
             throw new ReglaDominioException("Una fragancia publicada debe tener una Pirámide Olfativa válida.");
         }
         this.publicada = true;
+    }
+
+    public void validarEliminacion(boolean tienePedidosActivos) {
+        if (tienePedidosActivos) {
+            throw new ReglaDominioException("No se puede eliminar una fragancia con pedidos activos; puede desactivarse.");
+        }
     }
 
     public void desactivar() {
