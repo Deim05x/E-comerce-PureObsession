@@ -9,17 +9,18 @@ Los casos de uso solo orquestan: buscan en el Repository, llaman a la operación
 | # | Caso de uso | Qué hace | Repository que necesita | Operación de dominio / regla |
 |---|---|---|---|---|
 | 1 | RegistrarBotellaMadreUseCase | Registra una botella original con su fragancia, concentración y pirámide olfativa | BotellaMadreRepository | Fragancia.crear (nombre y familia obligatorios), PiramideOlfativa (Regla 5), Volumen (mayor a 0) y BotellaMadre.crear |
-| 2 | CrearDecantUseCase | Extrae un decant de una botella madre | BotellaMadreRepository | Decant.crearDesdeBotellaMadre (Reglas 1, 2 y 6) |
+| 2 | CrearDecantUseCase | Extrae un decant de una botella madre | BotellaMadreRepository | BotellaMadre.crearDecant (Reglas 1, 2 y 6) |
 | 3 | PublicarFraganciaUseCase | Publica una fragancia en el catálogo | BotellaMadreRepository | Fragancia.publicar (Reglas 4 y 5) |
-| 4 | EliminarFraganciaUseCase | Elimina físicamente la fragancia si no está en pedidos activos; si lo está, la desactiva | BotellaMadreRepository, PedidoRepository | PedidoRepository.existePedidoActivoConItem (Regla 8) |
+| 4 | EliminarFraganciaUseCase | Elimina su inventario si no hay pedidos activos; si los hay, rechaza la eliminación | BotellaMadreRepository, PedidoRepository | Fragancia.validarEliminacion y PedidoRepository.existePedidoActivoConFragancia (Regla 8) |
 
-> `Fragancia.desactivar()` retira la fragancia del catálogo y evita que vuelva a publicarse. La eliminación física sigue pendiente de un mapeo explícito entre `LineaPedido.itemId` y su `Fragancia`: actualmente el pedido solo conoce el identificador del artículo (Decant, Perfume o Tester), no el de la fragancia.
+> `Fragancia.desactivar()` retira la referencia del catálogo sin borrar inventario ni pedidos. La eliminación física es otra operación: se valida con `LineaPedido.fraganciaId` (distinto de `itemId`). `EliminarFraganciaUseCase` rechaza cuando existen pedidos activos y elimina todas las botellas de la fragancia cuando no existen. Los pedidos históricos conservan identificadores, descripción y precio.
+
 
 ### Comprador
 
 | # | Caso de uso | Qué hace | Repository que necesita | Operación de dominio / regla |
 |---|---|---|---|---|
-| 5 | ConsultarCatalogoUseCase | Lista las fragancias publicadas (filtros por familia, concentración) | BotellaMadreRepository | Solo lectura |
+| 5 | ConsultarCatalogoUseCase | Lista las fragancias publicadas (filtro opcional por familia; muestra la concentración) | BotellaMadreRepository | Solo lectura |
 | 6 | RealizarPedidoUseCase | Crea un pedido con uno o más ítems | PedidoRepository, BotellaMadreRepository | Pedido.crear (invariantes del agregado Pedido) |
 | 7 | CancelarPedidoUseCase | Cancela un pedido que aún no fue enviado | PedidoRepository | Pedido.cancelar |
 | 8 | ConsultarMisPedidosUseCase | Lista los pedidos de un cliente | PedidoRepository | PedidoRepository.listarPorCliente |
@@ -31,7 +32,7 @@ Los DTOs solo transportan datos entre el exterior y los casos de uso. Ninguno tr
 ### Requests
 
 #### Request 1 — CrearDecantRequest
-Mapea a: CrearDecantUseCase → Decant.crearDesdeBotellaMadre
+Mapea a: CrearDecantUseCase → BotellaMadre.crearDecant
 
 | Campo | Tipo | Por qué es necesario |
 |---|---|---|
@@ -50,7 +51,7 @@ Mapea a: RealizarPedidoUseCase → Pedido.crear
 | items[].itemId | UUID | Decant, Perfume o Tester que se compra. |
 | items[].cantidad | int | Cantidad de esa línea; debe ser mayor a 0. |
 
-No incluye precio: el precio se toma del catálogo al crear la línea. Si viniera del cliente, cualquiera podría manipular el total.
+No incluye precio ni fraganciaId: ambos se resuelven a partir del artículo del catálogo al crear la línea. Esta resolución de precios es parte del diseño del caso de uso RealizarPedido, aún no programado. Si viniera del cliente, cualquiera podría manipular el total.
 
 #### Request 3 — RegistrarBotellaMadreRequest
 Mapea a: RegistrarBotellaMadreUseCase → Fragancia.crear + BotellaMadre.crear
@@ -111,3 +112,52 @@ Mapea desde: Fragancia (resultado de ConsultarCatalogoUseCase)
 | nombre | String | Nombre visible en el catálogo. |
 | familiaOlfativa | FamiliaOlfativa | Clasificación usada por el filtro. |
 | concentracion | Concentracion | Característica de la fragancia publicada. |
+
+
+## Estado real de implementación
+
+| Caso de uso | Estado de entrega 1 |
+|---|---|
+| RegistrarBotellaMadre | Programado con DTOs, repositorio y pruebas. |
+| CrearDecant | Programado: carga raíz, delega extracción, conserva decant y guarda raíz. |
+| PublicarFragancia | Diseñado; operación de dominio `Fragancia.publicar()` programada. |
+| EliminarFragancia | Programado con consulta de pedidos activos por fragancia y pruebas. |
+| ConsultarCatalogo | Programado con filtro por familia y DTOs; solo publicadas/activas, sin duplicados por identidad. |
+| RealizarPedido | Diseñado; raíz Pedido programada y probada. Falta la orquestación del catálogo/precio. |
+| CancelarPedido | Diseñado; operación Pedido.cancelar programada y probada. |
+| ConsultarMisPedidos | Diseñado; consulta de repositorio programada y probada. |
+
+### Request 5 — EliminarFraganciaRequest
+
+Mapea a EliminarFraganciaUseCase → Fragancia.validarEliminacion.
+
+| Campo | Tipo | Justificación |
+|---|---|---|
+| fraganciaId | UUID | Identifica la referencia aromática, para consultar sus pedidos activos y localizar todas sus botellas. |
+
+### Response 4 — DecantResponse
+
+Mapea desde el decant y su raíz, tras CrearDecantUseCase.
+
+| Campo | Tipo | Justificación |
+|---|---|---|
+| decantId | UUID | Identifica el frasco creado. |
+| botellaMadreId | UUID | Permite localizar el agregado que lo conserva. |
+| fraganciaId | UUID | Identifica la fragancia heredada; útil para relacionar pedidos. |
+| nombreFragancia | String | Confirma al usuario qué aroma se fraccionó. |
+| concentracion | Concentracion | Expone el valor heredado, nunca elegido por el cliente. |
+| volumenMl | int | Confirma la cantidad del decant. |
+| volumenDisponibleMl | int | Informa el inventario posterior, incluso cero. |
+
+### Response 5 — EliminarFraganciaResponse
+
+| Campo | Tipo | Justificación |
+|---|---|---|
+| fraganciaId | UUID | Confirma qué referencia se retiró. |
+| botellasEliminadas | int | Confirma cuántos registros de inventario se eliminaron. |
+
+## Mapeo de una línea de pedido
+
+`LineaPedido.crear(id, itemId, fraganciaId, descripcion, precio, cantidad)` necesita tanto la identidad del artículo como la de su fragancia. En una futura API se resuelven desde inventario: el cliente no decide qué fragancia ni precio corresponden al artículo. Los tests crean estas líneas directamente para probar el dominio sin implementar todo el checkout.
+
+Los DTOs no contienen validación de negocio. Las reglas de volumen, publicación, precio, estados y eliminación están en entidades/VO; los casos de uso validan la presencia del Request, cargan, delegan y guardan.
