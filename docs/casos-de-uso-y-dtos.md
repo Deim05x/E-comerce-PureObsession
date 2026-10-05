@@ -13,7 +13,7 @@ Los casos de uso solo orquestan: buscan en el Repository, llaman a la operación
 | 3 | PublicarFraganciaUseCase | Publica una fragancia en el catálogo | BotellaMadreRepository | Fragancia.publicar (Reglas 4 y 5) |
 | 4 | EliminarFraganciaUseCase | Elimina físicamente la fragancia si no está en pedidos activos; si lo está, la desactiva | BotellaMadreRepository, PedidoRepository | PedidoRepository.existePedidoActivoConItem (Regla 8) |
 
-> Pendiente en el dominio: Fragancia aún no tiene desactivar() ni un estado activa/inactiva. El caso #4 depende de ese cambio para aplicar la eliminación lógica de la Regla 8.
+> `Fragancia.desactivar()` retira la fragancia del catálogo y evita que vuelva a publicarse. La eliminación física sigue pendiente de un mapeo explícito entre `LineaPedido.itemId` y su `Fragancia`: actualmente el pedido solo conoce el identificador del artículo (Decant, Perfume o Tester), no el de la fragancia.
 
 ### Comprador
 
@@ -67,6 +67,13 @@ Mapea a: RegistrarBotellaMadreUseCase → Fragancia.crear + BotellaMadre.crear
 
 No incluye ids: los genera el sistema al crear las entidades. Tampoco incluye volumen disponible: al registrar, es igual al volumen original.
 
+#### Request 4 — ConsultarCatalogoRequest
+Mapea a: ConsultarCatalogoUseCase
+
+| Campo | Tipo | Por qué es necesario |
+|---|---|---|
+| familiaOlfativa | FamiliaOlfativa | Filtro opcional para mostrar solo la familia solicitada. Si es nulo, se listan todas las fragancias publicadas y activas. |
+
 ### Responses
 
 #### Response 1 — PedidoDetalleResponse
@@ -94,3 +101,13 @@ Mapea desde: BotellaMadre (resultado de RegistrarBotellaMadreUseCase)
 | familiaOlfativa | FamiliaOlfativa | Confirma la clasificación guardada. |
 | concentracion | Concentracion | Confirma la concentración guardada (puede ser nula si aún no se definió). |
 | volumenDisponibleMl | int | Muestra cuánto se puede extraer; al registrar coincide con el volumen original. |
+
+#### Response 3 — FraganciaCatalogoResponse
+Mapea desde: Fragancia (resultado de ConsultarCatalogoUseCase)
+
+| Campo | Tipo | Por qué es necesario |
+|---|---|---|
+| fraganciaId | UUID | Identifica la fragancia consultada. |
+| nombre | String | Nombre visible en el catálogo. |
+| familiaOlfativa | FamiliaOlfativa | Clasificación usada por el filtro. |
+| concentracion | Concentracion | Característica de la fragancia publicada. |
