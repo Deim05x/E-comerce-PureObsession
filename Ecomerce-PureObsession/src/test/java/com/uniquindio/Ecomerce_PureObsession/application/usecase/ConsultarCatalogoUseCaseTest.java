@@ -28,9 +28,9 @@ class ConsultarCatalogoUseCaseTest {
         Fragancia inactiva = fragancia("Bleu", FamiliaOlfativa.AMADERADA);
         inactiva.publicar();
         inactiva.desactivar();
-        repositorio.guardar(BotellaMadre.crear(UUID.randomUUID(), publicada, new Volumen(100)));
-        repositorio.guardar(BotellaMadre.crear(UUID.randomUUID(), sinPublicar, new Volumen(100)));
-        repositorio.guardar(BotellaMadre.crear(UUID.randomUUID(), inactiva, new Volumen(100)));
+        repositorio.guardar(BotellaMadre.crear(UUID.randomUUID(), publicada, Volumen.crear(100)));
+        repositorio.guardar(BotellaMadre.crear(UUID.randomUUID(), sinPublicar, Volumen.crear(100)));
+        repositorio.guardar(BotellaMadre.crear(UUID.randomUUID(), inactiva, Volumen.crear(100)));
         ConsultarCatalogoUseCase useCase = new ConsultarCatalogoUseCase(repositorio);
 
         List<FraganciaCatalogoResponse> resultado = useCase.ejecutar(
@@ -42,15 +42,15 @@ class ConsultarCatalogoUseCaseTest {
 
     private Fragancia fragancia(String nombre, FamiliaOlfativa familiaOlfativa) {
         return Fragancia.crear(UUID.randomUUID(), nombre, familiaOlfativa,
-                Concentracion.EAU_DE_PARFUM, new PiramideOlfativa("Bergamota", "Jazmín", "Almizcle"));
+                Concentracion.EAU_DE_PARFUM, PiramideOlfativa.crear("Bergamota", "Jazmín", "Almizcle"));
     }
     @Test
     void sinFiltroDebeListarSinDuplicarLaMismaFragancia() {
         // Arrange
         BotellaMadreRepository repo = new BotellaMadreRepositoryEnMemoria();
         Fragancia fragancia = fragancia("Sauvage", FamiliaOlfativa.AMADERADA); fragancia.publicar();
-        repo.guardar(BotellaMadre.crear(UUID.randomUUID(), fragancia, new Volumen(100)));
-        repo.guardar(BotellaMadre.crear(UUID.randomUUID(), fragancia, new Volumen(100)));
+        repo.guardar(BotellaMadre.crear(UUID.randomUUID(), fragancia, Volumen.crear(100)));
+        repo.guardar(BotellaMadre.crear(UUID.randomUUID(), fragancia, Volumen.crear(100)));
         // Act
         var resultado = new ConsultarCatalogoUseCase(repo).ejecutar(new ConsultarCatalogoRequest(null));
         // Assert

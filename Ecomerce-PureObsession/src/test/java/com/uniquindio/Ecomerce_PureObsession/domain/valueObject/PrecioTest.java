@@ -11,8 +11,8 @@ class PrecioTest {
     @Test
     void dosPreciosConElMismoValorYMonedaDebenSerIguales() {
         // Arrange
-        Precio p1 = new Precio(85000.0, "COP");
-        Precio p2 = new Precio(85000.0, "COP");
+        Precio p1 = Precio.crear(85000.0, "COP");
+        Precio p2 = Precio.crear(85000.0, "COP");
 
         // Act & Assert
         assertEquals(p1, p2); // Value Object: igual por VALOR
@@ -21,6 +21,6 @@ class PrecioTest {
     @Test
     void noDebePermitirCrearUnPrecioNegativo() {
         // Arrange & Act & Assert
-        assertThrows(ReglaDominioException.class, () -> new Precio(-100.0, "COP"));
+        assertThrows(ReglaDominioException.class, () -> Precio.crear(-100.0, "COP"));
     }
 }

@@ -1,12 +1,20 @@
 package com.uniquindio.Ecomerce_PureObsession.domain.valueObject;
-
 import com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException;
+import java.util.Objects;
 
-/** El inventario puede agotarse; el volumen original y el solicitado usan Volumen (> 0). */
-public record VolumenDisponible(int mililitros) {
-    public VolumenDisponible {
-        if (mililitros < 0) {
-            throw new ReglaDominioException("El volumen disponible no puede ser negativo.");
-        }
+/** Value object inmutable; se construye únicamente a través de la fábrica validada. */
+public final class VolumenDisponible {
+    private final int mililitros;
+    private VolumenDisponible(int mililitros) {
+        this.mililitros = mililitros;
     }
+    public static VolumenDisponible crear(int mililitros) {
+        if (mililitros < 0) throw new ReglaDominioException("El volumen disponible no puede ser negativo.");
+        return new VolumenDisponible(mililitros);
+    }
+    public int mililitros() { return mililitros; }
+    @Override public boolean equals(Object other) {
+        return this == other || other instanceof VolumenDisponible value && Objects.equals(mililitros, value.mililitros);
+    }
+    @Override public int hashCode() { return Objects.hash(mililitros); }
 }

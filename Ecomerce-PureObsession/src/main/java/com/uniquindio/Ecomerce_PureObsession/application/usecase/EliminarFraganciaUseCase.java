@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Objects;
 
 /** La política está en Fragancia; aquí se reúnen los datos y se persiste el resultado. */
-public class EliminarFraganciaUseCase {
+public class EliminarFraganciaUseCase implements com.uniquindio.Ecomerce_PureObsession.application.port.in.EliminarFraganciaPort {
     private final BotellaMadreRepository botellas;
     private final PedidoRepository pedidos;
     public EliminarFraganciaUseCase(BotellaMadreRepository botellas, PedidoRepository pedidos) {

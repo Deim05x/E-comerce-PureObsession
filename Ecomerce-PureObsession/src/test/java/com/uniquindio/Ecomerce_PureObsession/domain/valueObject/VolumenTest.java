@@ -11,8 +11,8 @@ class VolumenTest {
     @Test
     void dosVolumenesConLosMismosMililitrosDebenSerIguales() {
         // Arrange
-        Volumen v1 = new Volumen(50);
-        Volumen v2 = new Volumen(50);
+        Volumen v1 = Volumen.crear(50);
+        Volumen v2 = Volumen.crear(50);
 
         // Act & Assert
         assertEquals(v1, v2); // Value Object: igual por VALOR (record -> equals generado)
@@ -21,6 +21,6 @@ class VolumenTest {
     @Test
     void noDebePermitirCrearUnVolumenMenorOIgualACero() {
         // Arrange & Act & Assert
-        assertThrows(ReglaDominioException.class, () -> new Volumen(0));
+        assertThrows(ReglaDominioException.class, () -> Volumen.crear(0));
     }
 }

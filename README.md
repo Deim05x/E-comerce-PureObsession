@@ -1,4 +1,17 @@
-# Pure Obsession — Entrega 1
+# Pure Obsession
+
+## Evolución actual: arquitectura hexagonal
+
+El trabajo actual incorpora puertos de entrada/salida, adaptadores REST y JPA, H2 local, registro de clientes/vendedores, sesiones, presentaciones con precios propios y revisión de certificados.
+
+- [Arquitectura, reglas y alcance actual](docs/arquitectura-hexagonal.md).
+- [Ejecutar la API, configuración y ejemplos](docs/api-local.md).
+
+Desde `Ecomerce-PureObsession`: `.\gradlew.bat test --no-daemon` para verificar y `.\gradlew.bat bootRun` para arrancar. Requiere JDK 21.
+
+Los apartados siguientes conservan la documentación de la entrega 1 y su alcance histórico. Para la implementación actual, consultar los enlaces anteriores.
+
+# Entrega 1 (histórico)
 
 Marketplace de perfumería: botellas madre, decants, perfumes y testers. Esta entrega demuestra modelado de dominio, agregados e invariantes, no un comercio electrónico terminado.
 

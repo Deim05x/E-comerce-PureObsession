@@ -19,16 +19,12 @@ public class Pedido {
     private EstadoPedido estado;
     private Precio total;
 
-    private Pedido(UUID id, UUID clienteId, List<LineaPedido> lineasIniciales) {
-        if (id == null || clienteId == null) {
-            throw new ReglaDominioException("El pedido y el cliente requieren identidad.");
-        }
-        validarLineas(lineasIniciales);
+    private Pedido(UUID id, UUID clienteId, List<LineaPedido> lineasIniciales, Precio total) {
         this.id = id;
         this.clienteId = clienteId;
         this.lineas = new ArrayList<>(lineasIniciales);
         this.estado = EstadoPedido.CREADO;
-        this.total = recalcularTotal();
+        this.total = total;
     }
 
     //Invariante 1: nunca se crea un pedido sin al menos una linea
@@ -36,7 +32,11 @@ public class Pedido {
         if (lineasIniciales == null || lineasIniciales.isEmpty()){
             throw new ReglaDominioException("Un pedido no puede crearse sin al menos una linea.");
         }
-        return new Pedido(id,clienteId,lineasIniciales);
+        if (id == null || clienteId == null) {
+            throw new ReglaDominioException("El pedido y el cliente requieren identidad.");
+        }
+        validarLineas(lineasIniciales);
+        return new Pedido(id,clienteId,lineasIniciales,calcularTotal(lineasIniciales));
     }
 
     //Invariante 3: no se editan lineas si el pedido ya no está en CREADO
@@ -111,17 +111,21 @@ public class Pedido {
         }
     }
 
-    private Precio recalcularTotal() { return calcularTotal(lineas); }
-
     private static Precio calcularTotal(List<LineaPedido> lineas) {
         java.math.BigDecimal suma = java.math.BigDecimal.ZERO;
         for (LineaPedido linea : lineas) {
             suma = suma.add(java.math.BigDecimal.valueOf(linea.getPrecioUnitario().precio())
                     .multiply(java.math.BigDecimal.valueOf(linea.getCantidad())));
         }
-        return new Precio(suma.doubleValue(), lineas.get(0).getPrecioUnitario().moneda());
+        return Precio.crear(suma.doubleValue(), lineas.get(0).getPrecioUnitario().moneda());
     }
 
+    public static Pedido reconstituir(UUID id, UUID clienteId, List<LineaPedido> lineas, EstadoPedido estado) {
+        if (estado == null) throw new ReglaDominioException("El estado es obligatorio.");
+        Pedido pedido = crear(id, clienteId, lineas);
+        pedido.estado = estado;
+        return pedido;
+    }
     public UUID getId() { return id; }
     public UUID getClienteId() { return clienteId; }
     public List<LineaPedido> getLineas() { return Collections.unmodifiableList(lineas); }

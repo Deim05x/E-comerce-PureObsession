@@ -11,7 +11,7 @@ import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.Volumen;
 
 import java.util.UUID;
 
-public class RegistrarBotellaMadreUseCase {
+public class RegistrarBotellaMadreUseCase implements com.uniquindio.Ecomerce_PureObsession.application.port.in.RegistrarBotellaMadrePort {
 
     private final BotellaMadreRepository botellaMadreRepository;
 
@@ -20,20 +20,20 @@ public class RegistrarBotellaMadreUseCase {
     }
 
     public BotellaMadreResponse ejecutar(RegistrarBotellaMadreRequest request) {
-        if (request == null) {
+        if (request == null || request.volumenMl() == null) {
             throw new ReglaDominioException("La solicitud es obligatoria.");
         }
-        PiramideOlfativa piramide = new PiramideOlfativa(
+        PiramideOlfativa piramide = PiramideOlfativa.crear(
                 request.notasSalida(), request.notasCorazon(), request.notasFondo());
 
         Fragancia fragancia = Fragancia.crear(UUID.randomUUID(), request.nombreFragancia(),
                 request.familiaOlfativa(), request.concentracion(), piramide);
 
-        BotellaMadre botella = BotellaMadre.crear(UUID.randomUUID(), fragancia, new Volumen(request.volumenMl()));
+        BotellaMadre botella = BotellaMadre.crear(UUID.randomUUID(), fragancia, Volumen.crear(request.volumenMl()));
 
         botellaMadreRepository.guardar(botella);
 
-        return new BotellaMadreResponse(botella.getId(), fragancia.getNombre(),
+        return new BotellaMadreResponse(botella.getId(), fragancia.getId(), fragancia.getNombre(),
                 fragancia.getFamiliaOlfativa(), fragancia.getConcentracion(),
                 botella.getVolumenDisponible().mililitros());
     }

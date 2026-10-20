@@ -1,15 +1,11 @@
 package com.uniquindio.Ecomerce_PureObsession.application.dto.request;
-
-import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.Concentracion;
-import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.FamiliaOlfativa;
-
-public record RegistrarBotellaMadreRequest(
-        String nombreFragancia,
-        FamiliaOlfativa familiaOlfativa,
+import jakarta.validation.constraints.*;
+import java.util.UUID;
+import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.*;
+public record RegistrarBotellaMadreRequest(@NotBlank String nombreFragancia,
+        @NotNull FamiliaOlfativa familiaOlfativa,
         Concentracion concentracion,
-        String notasSalida,
-        String notasCorazon,
-        String notasFondo,
-        int volumenMl
-) {
-}
+        @NotBlank String notasSalida,
+        @NotBlank String notasCorazon,
+        @NotBlank String notasFondo,
+        @NotNull @Positive Integer volumenMl) {}

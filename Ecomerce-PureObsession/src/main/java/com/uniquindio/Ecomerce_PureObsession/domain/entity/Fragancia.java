@@ -18,13 +18,6 @@ public class Fragancia {
     private boolean activa;
 
     private Fragancia(UUID id, String nombre, FamiliaOlfativa familiaOlfativa, Concentracion concentracion, PiramideOlfativa piramideOlfativa) {
-        if (id == null) throw new ReglaDominioException("La identidad es obligatoria.");
-        if (nombre == null || nombre.isBlank()) {
-            throw new ReglaDominioException("El nombre de la fragancia es obligatorio.");
-        }
-        if (familiaOlfativa == null) {
-            throw new ReglaDominioException("La familia olfativa es obligatoria.");
-        }
         this.id = id;
         this.nombre = nombre;
         this.familiaOlfativa = familiaOlfativa;
@@ -35,6 +28,13 @@ public class Fragancia {
     }
 
     public static Fragancia crear(UUID id, String nombre, FamiliaOlfativa familiaOlfativa, Concentracion concentracion, PiramideOlfativa piramideOlfativa) {
+        if (id == null) throw new ReglaDominioException("La identidad es obligatoria.");
+        if (nombre == null || nombre.isBlank()) {
+            throw new ReglaDominioException("El nombre de la fragancia es obligatorio.");
+        }
+        if (familiaOlfativa == null) {
+            throw new ReglaDominioException("La familia olfativa es obligatoria.");
+        }
         return new Fragancia(id, nombre, familiaOlfativa, concentracion, piramideOlfativa);
     }
 
