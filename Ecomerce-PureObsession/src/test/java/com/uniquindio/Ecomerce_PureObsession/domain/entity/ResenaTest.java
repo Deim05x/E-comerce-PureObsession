@@ -35,7 +35,7 @@ class ResenaTest {
 
     private Pedido unPedido(UUID clienteId) {
         LineaPedido linea = LineaPedido.crear(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "Decant 10 ml",
-                new Precio(50000.0, "COP"), 1);
+                Precio.crear(50000.0, "COP"), 1);
         return Pedido.crear(UUID.randomUUID(), clienteId, List.of(linea));
     }
 }

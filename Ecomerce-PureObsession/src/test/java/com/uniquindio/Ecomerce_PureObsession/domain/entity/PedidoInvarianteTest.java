@@ -13,7 +13,7 @@ class PedidoInvarianteTest {
 
     private LineaPedido unaLinea(double precio, int cantidad) {
         return LineaPedido.crear(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "One Million 10ml",
-                new Precio(precio, "COP"), cantidad);
+                Precio.crear(precio, "COP"), cantidad);
     }
 
     @Test

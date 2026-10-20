@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public record BotellaMadreResponse(
         UUID botellaMadreId,
+        UUID fraganciaId,
         String nombreFragancia,
         FamiliaOlfativa familiaOlfativa,
         Concentracion concentracion,

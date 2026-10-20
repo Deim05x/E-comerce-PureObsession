@@ -17,16 +17,16 @@ public class BotellaMadre {
     private final List<Decant> decants = new ArrayList<>();
 
     private BotellaMadre(UUID id, Fragancia fragancia, Volumen volumenOriginal) {
-        if (id == null || fragancia == null || volumenOriginal == null) {
-            throw new ReglaDominioException("La botella requiere identidad, fragancia y volumen original.");
-        }
         this.id = id;
         this.fragancia = fragancia;
         this.volumenOriginal = volumenOriginal;
-        this.volumenDisponible = new VolumenDisponible(volumenOriginal.mililitros());
+        this.volumenDisponible = VolumenDisponible.crear(volumenOriginal.mililitros());
     }
 
     public static BotellaMadre crear(UUID id, Fragancia fragancia, Volumen volumenOriginal) {
+        if (id == null || fragancia == null || volumenOriginal == null) {
+            throw new ReglaDominioException("La botella requiere identidad, fragancia y volumen original.");
+        }
         return new BotellaMadre(id, fragancia, volumenOriginal);
     }
 
@@ -59,9 +59,28 @@ public class BotellaMadre {
     /** Operación de inventario; para crear y conservar un decant usar crearDecant. */
     public void extraerParaDecant(Volumen solicitado) {
         validarExtraccion(solicitado);
-        volumenDisponible = new VolumenDisponible(volumenDisponible.mililitros() - solicitado.mililitros());
+        volumenDisponible = VolumenDisponible.crear(volumenDisponible.mililitros() - solicitado.mililitros());
     }
 
+    public record DecantGuardado(UUID id, int volumenMl) {}
+    public static BotellaMadre reconstituir(UUID id, Fragancia fragancia, int original, int disponible,
+            List<DecantGuardado> guardados) {
+        BotellaMadre botella = crear(id, fragancia, Volumen.crear(original));
+        if (disponible < 0 || disponible > original || guardados == null)
+            throw new ReglaDominioException("Inventario persistido inválido.");
+        long extraido = 0;
+        for (DecantGuardado d : guardados) {
+            if (d == null || d.id() == null || d.volumenMl() <= 0 || d.volumenMl() >= original
+                    || botella.decants.stream().anyMatch(x -> x.getId().equals(d.id())))
+                throw new ReglaDominioException("Decant persistido inválido.");
+            extraido += d.volumenMl();
+            botella.decants.add(Decant.crearInterno(d.id(), fragancia, Volumen.crear(d.volumenMl())));
+        }
+        if (extraido + disponible > original)
+            throw new ReglaDominioException("El inventario persistido supera el volumen original.");
+        botella.volumenDisponible = VolumenDisponible.crear(disponible);
+        return botella;
+    }
     public UUID getId() { return id; }
     public Fragancia getFragancia() { return fragancia; }
     public Volumen getVolumenOriginal() { return volumenOriginal; }

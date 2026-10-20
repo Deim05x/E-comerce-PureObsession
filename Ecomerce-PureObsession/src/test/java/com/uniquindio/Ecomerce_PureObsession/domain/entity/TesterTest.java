@@ -16,7 +16,7 @@ class TesterTest {
 
     private Fragancia unaFragancia() {
         return Fragancia.crear(UUID.randomUUID(), "One Million", FamiliaOlfativa.AMADERADA,
-                Concentracion.EAU_DE_PARFUM, new PiramideOlfativa("Naranja", "Canela", "Cuero"));
+                Concentracion.EAU_DE_PARFUM, PiramideOlfativa.crear("Naranja", "Canela", "Cuero"));
     }
 
     @Test

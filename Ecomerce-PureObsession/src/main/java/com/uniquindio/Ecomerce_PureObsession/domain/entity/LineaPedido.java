@@ -15,13 +15,6 @@ public class LineaPedido {
     private final int cantidad;
 
     private LineaPedido(UUID id, UUID itemId, UUID fraganciaId, String descripcionFragancia, Precio precioUnitario, int cantidad){
-        if (id == null || itemId == null || fraganciaId == null || precioUnitario == null
-                || descripcionFragancia == null || descripcionFragancia.isBlank()) {
-            throw new ReglaDominioException("La línea requiere identidades, descripción y precio.");
-        }
-        if (cantidad <= 0){
-            throw new ReglaDominioException("La cantidad de una linea debe ser mayor a 0.");
-        }
         this.id = id;
         this.itemId = itemId;
         this.fraganciaId = fraganciaId;
@@ -31,11 +24,18 @@ public class LineaPedido {
     }
 
     public static LineaPedido crear(UUID id, UUID itemId, UUID fraganciaId, String descripcionFragancia, Precio precioUnitario, int cantidad) {
+        if (id == null || itemId == null || fraganciaId == null || precioUnitario == null
+                || descripcionFragancia == null || descripcionFragancia.isBlank()) {
+            throw new ReglaDominioException("La línea requiere identidades, descripción y precio.");
+        }
+        if (cantidad <= 0){
+            throw new ReglaDominioException("La cantidad de una linea debe ser mayor a 0.");
+        }
         return new LineaPedido(id, itemId, fraganciaId, descripcionFragancia, precioUnitario, cantidad);
     }
 
     public Precio calcularSubtotal() {
-        return new Precio(java.math.BigDecimal.valueOf(precioUnitario.precio()).multiply(java.math.BigDecimal.valueOf(cantidad)).doubleValue(), precioUnitario.moneda());
+        return Precio.crear(java.math.BigDecimal.valueOf(precioUnitario.precio()).multiply(java.math.BigDecimal.valueOf(cantidad)).doubleValue(), precioUnitario.moneda());
     }
 
     public UUID getId() { return id; }

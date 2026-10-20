@@ -10,18 +10,18 @@ import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.Volumen;
 import java.util.Objects;
 import java.util.UUID;
 
-public class CrearDecantUseCase {
+public class CrearDecantUseCase implements com.uniquindio.Ecomerce_PureObsession.application.port.in.CrearDecantPort {
     private final BotellaMadreRepository repository;
     public CrearDecantUseCase(BotellaMadreRepository repository) {
         this.repository = Objects.requireNonNull(repository);
     }
     public DecantResponse ejecutar(CrearDecantRequest request) {
-        if (request == null || request.botellaMadreId() == null) {
+        if (request == null || request.volumenMl() == null || request.botellaMadreId() == null) {
             throw new ReglaDominioException("La solicitud debe identificar la botella madre.");
         }
         BotellaMadre botella = repository.buscarPorId(request.botellaMadreId())
                 .orElseThrow(() -> new ReglaDominioException("La botella madre no existe."));
-        Decant decant = botella.crearDecant(UUID.randomUUID(), new Volumen(request.volumenMl()));
+        Decant decant = botella.crearDecant(UUID.randomUUID(), Volumen.crear(request.volumenMl()));
         repository.guardar(botella);
         return new DecantResponse(decant.getId(), botella.getId(), decant.getFragancia().getId(),
                 decant.getFragancia().getNombre(), decant.getFragancia().getConcentracion(),
