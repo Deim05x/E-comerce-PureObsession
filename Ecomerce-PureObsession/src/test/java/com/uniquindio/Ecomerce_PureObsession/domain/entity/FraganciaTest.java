@@ -18,7 +18,7 @@ class FraganciaTest {
     void dosFraganciasConLaMismaIdentidadSonLaMisma() {
         // Arrange
         UUID mismoId = UUID.randomUUID();
-        PiramideOlfativa piramide = new PiramideOlfativa("Bergamota", "Jazmín", "Almizcle");
+        PiramideOlfativa piramide = PiramideOlfativa.crear("Bergamota", "Jazmín", "Almizcle");
 
         Fragancia original = Fragancia.crear(mismoId, "Sauvage", FamiliaOlfativa.AMADERADA,
                 Concentracion.EAU_DE_TOILETTE, piramide);
@@ -32,7 +32,7 @@ class FraganciaTest {
     @Test
     void noDebePermitirPublicarUnaFraganciaSinConcentracionDefinida() {
         // Arrange
-        PiramideOlfativa piramide = new PiramideOlfativa("Bergamota", "Jazmín", "Almizcle");
+        PiramideOlfativa piramide = PiramideOlfativa.crear("Bergamota", "Jazmín", "Almizcle");
         Fragancia fragancia = Fragancia.crear(UUID.randomUUID(), "Bleu", FamiliaOlfativa.AMADERADA,
                 null, piramide);
 
@@ -42,7 +42,7 @@ class FraganciaTest {
 
     @Test
     void desactivarDebeRetirarLaFraganciaDelCatalogo() {
-        PiramideOlfativa piramide = new PiramideOlfativa("Bergamota", "Jazmín", "Almizcle");
+        PiramideOlfativa piramide = PiramideOlfativa.crear("Bergamota", "Jazmín", "Almizcle");
         Fragancia fragancia = Fragancia.crear(UUID.randomUUID(), "Bleu", FamiliaOlfativa.AMADERADA,
                 Concentracion.EAU_DE_PARFUM, piramide);
         fragancia.publicar();
@@ -66,8 +66,8 @@ class FraganciaTest {
     @Test
     void piramideDebeTenerLasTresFases() {
         // Arrange / Act & Assert
-        assertThrows(ReglaDominioException.class, () -> new PiramideOlfativa(null, "Jazmin", "Ambar"));
-        assertThrows(ReglaDominioException.class, () -> new PiramideOlfativa("Bergamota", " ", "Ambar"));
-        assertThrows(ReglaDominioException.class, () -> new PiramideOlfativa("Bergamota", "Jazmin", ""));
+        assertThrows(ReglaDominioException.class, () -> PiramideOlfativa.crear(null, "Jazmin", "Ambar"));
+        assertThrows(ReglaDominioException.class, () -> PiramideOlfativa.crear("Bergamota", " ", "Ambar"));
+        assertThrows(ReglaDominioException.class, () -> PiramideOlfativa.crear("Bergamota", "Jazmin", ""));
     }
 }

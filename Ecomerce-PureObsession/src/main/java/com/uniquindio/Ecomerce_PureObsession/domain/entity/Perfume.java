@@ -13,9 +13,6 @@ public class Perfume {
     private boolean envolturaRegalo;
 
     private Perfume(UUID id, Fragancia fragancia, Volumen volumen) {
-        if (id == null) throw new ReglaDominioException("La identidad es obligatoria.");
-        if (fragancia == null) throw new ReglaDominioException("La fragancia es obligatoria.");
-        if (volumen == null) throw new ReglaDominioException("El volumen es obligatorio.");
         this.id = id;
         this.fragancia = fragancia;
         this.volumen = volumen;
@@ -23,6 +20,9 @@ public class Perfume {
     }
 
     public static Perfume crear(UUID id, Fragancia fragancia, Volumen volumen) {
+        if (id == null) throw new ReglaDominioException("La identidad es obligatoria.");
+        if (fragancia == null) throw new ReglaDominioException("La fragancia es obligatoria.");
+        if (volumen == null) throw new ReglaDominioException("El volumen es obligatorio.");
         return new Perfume(id, fragancia, volumen);
     }
 

@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ValidacionAgregadosTest {
     @Test void noDebeAceptarIdentidadesNulas() {
         // Arrange
-        var fragancia = fragancia(); var volumen = new Volumen(100);
+        var fragancia = fragancia(); var volumen = Volumen.crear(100);
         // Act & Assert
         assertThrows(ReglaDominioException.class, () -> BotellaMadre.crear(null, fragancia, volumen));
         assertThrows(ReglaDominioException.class, () -> Pedido.crear(null, UUID.randomUUID(), List.of(linea(fragancia.getId(), "COP"))));
@@ -34,7 +34,7 @@ class ValidacionAgregadosTest {
     }
     @Test void coleccionesNoDebenPermitirModificarElAgregadoDesdeFuera() {
         // Arrange
-        var botella = botella(); botella.crearDecant(UUID.randomUUID(), new Volumen(10));
+        var botella = botella(); botella.crearDecant(UUID.randomUUID(), Volumen.crear(10));
         var pedido = Pedido.crear(UUID.randomUUID(), UUID.randomUUID(), List.of(linea(UUID.randomUUID(), "COP")));
         // Act & Assert
         assertThrows(UnsupportedOperationException.class, () -> botella.getDecants().clear());
@@ -44,7 +44,7 @@ class ValidacionAgregadosTest {
         // Arrange
         var botella = botella(); botella.getFragancia().desactivar();
         // Act & Assert
-        assertThrows(ReglaDominioException.class, () -> botella.crearDecant(UUID.randomUUID(), new Volumen(10)));
+        assertThrows(ReglaDominioException.class, () -> botella.crearDecant(UUID.randomUUID(), Volumen.crear(10)));
         assertEquals(100, botella.getVolumenDisponible().mililitros());
     }
     @Test void soloElCompradorPuedeResenar() {
@@ -57,8 +57,8 @@ class ValidacionAgregadosTest {
     @Test void sumaDecimalDebeSerCoherenteConLosSubtotales() {
         // Arrange
         var f = UUID.randomUUID();
-        var a = LineaPedido.crear(UUID.randomUUID(), UUID.randomUUID(), f, "A", new Precio(0.1, "COP"), 1);
-        var b = LineaPedido.crear(UUID.randomUUID(), UUID.randomUUID(), f, "B", new Precio(0.2, "COP"), 1);
+        var a = LineaPedido.crear(UUID.randomUUID(), UUID.randomUUID(), f, "A", Precio.crear(0.1, "COP"), 1);
+        var b = LineaPedido.crear(UUID.randomUUID(), UUID.randomUUID(), f, "B", Precio.crear(0.2, "COP"), 1);
         // Act
         var pedido = Pedido.crear(UUID.randomUUID(), UUID.randomUUID(), List.of(a, b));
         // Assert

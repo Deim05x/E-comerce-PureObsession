@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Caso de uso para consultar las fragancias publicadas por familia olfativa.
  */
-public class ConsultarCatalogoUseCase {
+public class ConsultarCatalogoUseCase implements com.uniquindio.Ecomerce_PureObsession.application.port.in.ConsultarCatalogoPort {
 
     private final BotellaMadreRepository botellaMadreRepository;
 
