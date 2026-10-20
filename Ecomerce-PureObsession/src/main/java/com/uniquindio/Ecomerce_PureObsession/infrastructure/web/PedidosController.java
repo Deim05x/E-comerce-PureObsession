@@ -4,6 +4,7 @@ import com.uniquindio.Ecomerce_PureObsession.application.dto.request.CrearPedido
 import com.uniquindio.Ecomerce_PureObsession.application.dto.response.PedidoResponse;
 import com.uniquindio.Ecomerce_PureObsession.application.port.in.ComprarPort;
 import com.uniquindio.Ecomerce_PureObsession.application.port.in.ConsultarPedidoPort;
+import com.uniquindio.Ecomerce_PureObsession.application.port.in.CancelarPedidoPort;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.security.Principal;
@@ -17,8 +18,9 @@ import org.springframework.web.bind.annotation.*;
 public class PedidosController {
     private final ComprarPort compras;
     private final ConsultarPedidoPort consultas;
-    public PedidosController(ComprarPort compras, ConsultarPedidoPort consultas) {
-        this.compras = compras; this.consultas = consultas;
+    private final CancelarPedidoPort cancelaciones;
+    public PedidosController(ComprarPort compras, ConsultarPedidoPort consultas, CancelarPedidoPort cancelaciones) {
+        this.compras = compras; this.consultas = consultas; this.cancelaciones = cancelaciones;
     }
     @PostMapping public ResponseEntity<PedidoResponse> crear(Principal actor,
             @Valid @RequestBody CrearPedidoRequest solicitud) {
@@ -31,5 +33,9 @@ public class PedidosController {
     @GetMapping("/{id}") public PedidoResponse consultar(Principal actor, @PathVariable UUID id,
             @RequestHeader(value = "X-Consulta-Pedido", required = false) String clave) {
         return consultas.consultar(id, actor == null ? null : actor.getName(), clave);
+    }
+    @PostMapping("/{id}/cancelacion") public PedidoResponse cancelar(Principal actor, @PathVariable UUID id,
+            @RequestHeader(value = "X-Consulta-Pedido", required = false) String clave) {
+        return cancelaciones.ejecutar(id, actor == null ? null : actor.getName(), clave);
     }
 }

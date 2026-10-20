@@ -20,4 +20,11 @@ public class ComprasConfig {
     @Bean ConsultarPedidoPort consultarPedidos(PedidoRepository pedidos, CuentaRepository cuentas) {
         return new ConsultarPedidoUseCase(pedidos, cuentas);
     }
+
+    @Bean CancelarPedidoPort cancelarPedido(PedidoRepository pedidos, CuentaRepository cuentas,
+                                            InventarioVentaPort inventario, PlatformTransactionManager transactionManager) {
+        var casoDeUso = new CancelarPedidoUseCase(pedidos, cuentas, inventario);
+        var transaccion = new TransactionTemplate(transactionManager);
+        return (id, actor, clave) -> transaccion.execute(status -> casoDeUso.ejecutar(id, actor, clave));
+    }
 }

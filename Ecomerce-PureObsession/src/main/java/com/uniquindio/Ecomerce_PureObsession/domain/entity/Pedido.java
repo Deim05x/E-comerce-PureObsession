@@ -55,6 +55,12 @@ public class Pedido {
     public void marcarEntregado() { if (estado != EstadoPedido.ENVIADO) throw new ReglaDominioException("Solo un pedido ENVIADO puede entregarse."); estado = EstadoPedido.ENTREGADO; }
     /** Operación histórica que conserva la regla anterior. */
     public void cancelar() { if (estado != EstadoPedido.CREADO && estado != EstadoPedido.CONFIRMADO) throw new ReglaDominioException("Solo un pedido creado o confirmado puede cancelarse."); estado = EstadoPedido.CANCELADO; }
+    /** Solo el pedido aún impago puede liberar la reserva automáticamente. */
+    public void cancelarAntesDePago() {
+        if (estado != EstadoPedido.CREADO)
+            throw new ReglaDominioException("El pedido confirmado requiere un proceso de devolución.");
+        estado = EstadoPedido.CANCELADO;
+    }
     public boolean permiteResena() { return estado == EstadoPedido.ENTREGADO; }
     public boolean estaActivo() { return estado != EstadoPedido.ENTREGADO && estado != EstadoPedido.CANCELADO; }
     public boolean contieneItem(UUID itemId) { return lineas.stream().anyMatch(l -> l.getItemId().equals(itemId)); }
