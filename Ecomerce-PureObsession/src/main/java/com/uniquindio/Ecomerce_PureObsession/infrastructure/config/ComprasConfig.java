@@ -1,8 +1,8 @@
 package com.uniquindio.Ecomerce_PureObsession.infrastructure.config;
 
-import com.uniquindio.Ecomerce_PureObsession.application.port.in.ComprarPort;
+import com.uniquindio.Ecomerce_PureObsession.application.port.in.*;
 import com.uniquindio.Ecomerce_PureObsession.application.port.out.*;
-import com.uniquindio.Ecomerce_PureObsession.application.usecase.ComprarUseCase;
+import com.uniquindio.Ecomerce_PureObsession.application.usecase.*;
 import com.uniquindio.Ecomerce_PureObsession.domain.repository.PedidoRepository;
 import org.springframework.context.annotation.*;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -15,5 +15,9 @@ public class ComprasConfig {
         var casoDeUso = new ComprarUseCase(cuentas, presentaciones, pedidos, inventario);
         var transaccion = new TransactionTemplate(transactionManager);
         return (actor, solicitud) -> transaccion.execute(status -> casoDeUso.ejecutar(actor, solicitud));
+    }
+
+    @Bean ConsultarPedidoPort consultarPedidos(PedidoRepository pedidos, CuentaRepository cuentas) {
+        return new ConsultarPedidoUseCase(pedidos, cuentas);
     }
 }

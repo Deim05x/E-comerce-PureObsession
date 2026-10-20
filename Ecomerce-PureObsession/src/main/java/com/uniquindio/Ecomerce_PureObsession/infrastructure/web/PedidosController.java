@@ -3,9 +3,12 @@ package com.uniquindio.Ecomerce_PureObsession.infrastructure.web;
 import com.uniquindio.Ecomerce_PureObsession.application.dto.request.CrearPedidoRequest;
 import com.uniquindio.Ecomerce_PureObsession.application.dto.response.PedidoResponse;
 import com.uniquindio.Ecomerce_PureObsession.application.port.in.ComprarPort;
+import com.uniquindio.Ecomerce_PureObsession.application.port.in.ConsultarPedidoPort;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.security.Principal;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,10 +16,20 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/pedidos")
 public class PedidosController {
     private final ComprarPort compras;
-    public PedidosController(ComprarPort compras) { this.compras = compras; }
+    private final ConsultarPedidoPort consultas;
+    public PedidosController(ComprarPort compras, ConsultarPedidoPort consultas) {
+        this.compras = compras; this.consultas = consultas;
+    }
     @PostMapping public ResponseEntity<PedidoResponse> crear(Principal actor,
             @Valid @RequestBody CrearPedidoRequest solicitud) {
         PedidoResponse creado = compras.ejecutar(actor == null ? null : actor.getName(), solicitud);
         return ResponseEntity.created(URI.create("/api/pedidos/" + creado.id())).body(creado);
+    }
+    @GetMapping("/mios") public List<PedidoResponse> mios(Principal actor) {
+        return consultas.listarMios(actor == null ? null : actor.getName());
+    }
+    @GetMapping("/{id}") public PedidoResponse consultar(Principal actor, @PathVariable UUID id,
+            @RequestHeader(value = "X-Consulta-Pedido", required = false) String clave) {
+        return consultas.consultar(id, actor == null ? null : actor.getName(), clave);
     }
 }
