@@ -1,5 +1,6 @@
 package com.uniquindio.Ecomerce_PureObsession.infrastructure.web;
 import com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException;
+import com.uniquindio.Ecomerce_PureObsession.domain.exception.RecursoNoEncontradoException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -20,6 +21,8 @@ public class ErroresController {
     }
     @ExceptionHandler(ReglaDominioException.class)
     public ResponseEntity<ErrorResponse> dominio(ReglaDominioException e){return error(422,e.getMessage());}
+    @ExceptionHandler(RecursoNoEncontradoException.class)
+    public ResponseEntity<ErrorResponse> noEncontrado(RecursoNoEncontradoException e){return error(404,e.getMessage());}
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> auth(AuthenticationException e){return error(401,"Credenciales inválidas.");}
     @ExceptionHandler({HttpMessageNotReadableException.class,MethodArgumentTypeMismatchException.class})

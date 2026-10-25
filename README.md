@@ -11,6 +11,35 @@ Desde `Ecomerce-PureObsession`: `.\gradlew.bat test --no-daemon` para verificar 
 
 Los apartados siguientes conservan la documentación de la entrega 1 y su alcance histórico. Para la implementación actual, consultar los enlaces anteriores.
 
+## Pruebas avanzadas
+
+### 1. Seguridad de endpoints
+
+La seguridad se prueba con el contexto completo para ejecutar la cadena real de Spring Security.
+Una petición anónima a una ruta privada responde 401 porque no tiene identidad autenticada.
+La operación de inventario responde 403 cuando la sesión tiene el rol VENDEDOR.
+Con ADMIN y un token CSRF válido, la misma solicitud recibe 201 y llega al caso de uso real.
+El postprocesador de usuario y roles representa la sesión que recibe cada petición.
+Así se distingue la autenticación de la autorización basada en roles.
+
+### 2. DataJpaTest y SpringBootTest
+
+DataJpaTest carga JPA y H2, por eso sirve para revisar el adaptador de pedidos rápidamente.
+El adaptador se importa de forma explícita porque un slice no registra toda la infraestructura.
+Cada prueba del slice se ejecuta en transacción y sus datos se revierten al terminar.
+SpringBootTest también carga controladores, seguridad y casos de uso, por lo que tarda más.
+Esa carga completa permite detectar errores de conexión entre capas que el slice no muestra.
+Usamos el slice para persistencia y el contexto completo para los flujos HTTP importantes.
+
+### 3. Integración
+
+La prueba de integración registra una botella por HTTP y cruza controller, caso de uso, JPA y H2.
+No usa Mockito: después de la respuesta consulta el repositorio real para confirmar el guardado.
+La transacción de prueba evita que el escenario deje datos para la siguiente ejecución.
+Es más lenta que una unitaria, pero descubre fallos de mapeo y configuración reales.
+No conviene usarla para todos los bordes porque esos casos son más rápidos con pruebas unitarias.
+El soporte de inventario de test solo permite iniciar el contexto mientras llega su adaptador transaccional.
+
 # Entrega 1 (histórico)
 
 Marketplace de perfumería: botellas madre, decants, perfumes y testers. Esta entrega demuestra modelado de dominio, agregados e invariantes, no un comercio electrónico terminado.

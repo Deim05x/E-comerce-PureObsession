@@ -5,6 +5,7 @@ import com.uniquindio.Ecomerce_PureObsession.application.dto.request.CrearPresen
 import com.uniquindio.Ecomerce_PureObsession.application.dto.response.PresentacionResponse;
 import com.uniquindio.Ecomerce_PureObsession.domain.entity.*;
 import com.uniquindio.Ecomerce_PureObsession.domain.repository.BotellaMadreRepository;
+import com.uniquindio.Ecomerce_PureObsession.domain.exception.RecursoNoEncontradoException;
 import com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException;
 import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.*;
 import java.util.*;
@@ -21,7 +22,7 @@ public class PresentacionesUseCase implements PresentacionesPort {
     }
     private Presentacion propia(String actor,UUID id) {
         Cuenta c=cuenta(actor);
-        Presentacion p=presentaciones.buscarPorId(id).orElseThrow(()->new ReglaDominioException("La presentación no existe."));
+        Presentacion p=presentaciones.buscarPorId(id).orElseThrow(()->new RecursoNoEncontradoException("La presentación no existe."));
         if(c.getRol()!=Rol.VENDEDOR || !p.getVendedorId().equals(c.getId()))
             throw new ReglaDominioException("La presentación no pertenece al vendedor.");
         return p;
