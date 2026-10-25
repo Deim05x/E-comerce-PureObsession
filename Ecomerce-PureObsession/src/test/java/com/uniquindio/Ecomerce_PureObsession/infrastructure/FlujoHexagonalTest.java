@@ -5,6 +5,8 @@ import com.uniquindio.Ecomerce_PureObsession.application.dto.request.*;
 import com.uniquindio.Ecomerce_PureObsession.domain.entity.*;
 import com.uniquindio.Ecomerce_PureObsession.domain.repository.*;
 import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.*;
+import com.uniquindio.Ecomerce_PureObsession.support.InventarioVentaTestConfig;
+import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static com.uniquindio.Ecomerce_PureObsession.DatosPrueba.*;
 
 @SpringBootTest(properties={"spring.datasource.url=jdbc:h2:mem:hexagonal;DB_CLOSE_DELAY=-1","spring.jpa.hibernate.ddl-auto=create-drop","app.admin.email=","app.admin.clave="})
+@Import(InventarioVentaTestConfig.class)
 class FlujoHexagonalTest {
     @Autowired WebApplicationContext contexto;
     @Autowired CuentasPort cuentas;
