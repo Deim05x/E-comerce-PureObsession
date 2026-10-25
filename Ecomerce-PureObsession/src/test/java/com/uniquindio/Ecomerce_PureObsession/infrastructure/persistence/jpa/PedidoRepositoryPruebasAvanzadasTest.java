@@ -4,6 +4,7 @@ import com.uniquindio.Ecomerce_PureObsession.domain.entity.*;
 import com.uniquindio.Ecomerce_PureObsession.domain.repository.PedidoRepository;
 import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.*;
 import com.uniquindio.Ecomerce_PureObsession.support.InventarioVentaTestConfig;
+import jakarta.persistence.EntityManager;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +56,7 @@ class PedidoRepositoryPruebasAvanzadasTest {
 @Import(PedidoJpaAdapter.class)
 class PedidoRepositoryDataJpaPruebaAvanzadaTest {
     @Autowired PedidoRepository pedidos;
+    @Autowired EntityManager entityManager;
 
     @Test void deberiaConsultarPedidosActivosPorFraganciaConElSliceJPA() {
         UUID fragancia=UUID.randomUUID();
@@ -68,7 +70,28 @@ class PedidoRepositoryDataJpaPruebaAvanzadaTest {
         assertFalse(pedidos.existePedidoActivoConFragancia(fragancia));
     }
 
+    @Test void deberiaOrdenarElRankingDeFraganciasPorCantidadVendida() {
+        UUID masVendida=UUID.randomUUID();
+        UUID menosVendida=UUID.randomUUID();
+        pedidos.guardar(Pedido.crear(UUID.randomUUID(),UUID.randomUUID(),List.of(linea(masVendida,5))));
+        pedidos.guardar(Pedido.crear(UUID.randomUUID(),UUID.randomUUID(),List.of(linea(masVendida,2))));
+        pedidos.guardar(Pedido.crear(UUID.randomUUID(),UUID.randomUUID(),List.of(linea(menosVendida,3))));
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Object[]> ranking=entityManager.createQuery(
+                "select l.fraganciaId, sum(l.cantidad) from PedidoJpa p join p.lineas l "
+                        + "group by l.fraganciaId order by sum(l.cantidad) desc",Object[].class).getResultList();
+
+        assertEquals(2,ranking.size());
+        assertEquals(masVendida,ranking.getFirst()[0]);
+        assertEquals(7L,((Number)ranking.getFirst()[1]).longValue());
+    }
+
     private static LineaPedido linea(UUID fragancia) {
-        return LineaPedido.crear(UUID.randomUUID(),UUID.randomUUID(),fragancia,"Línea",Precio.crear(50000.0,"COP"),1);
+        return linea(fragancia,1);
+    }
+    private static LineaPedido linea(UUID fragancia,int cantidad) {
+        return LineaPedido.crear(UUID.randomUUID(),UUID.randomUUID(),fragancia,"Línea",Precio.crear(50000.0,"COP"),cantidad);
     }
 }
