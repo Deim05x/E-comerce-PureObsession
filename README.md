@@ -1,19 +1,49 @@
 # Pure Obsession
 
-## Evolución actual: arquitectura hexagonal
+## Pedidos, arquitectura y pruebas
 
-El trabajo actual incorpora puertos de entrada/salida, adaptadores REST y JPA, H2 local, registro de clientes/vendedores, sesiones, presentaciones con precios propios y revisión de certificados.
+El marketplace evoluciona hacia una arquitectura hexagonal con Spring Boot, H2, seguridad por sesión, controladores REST y persistencia JPA. El alcance nuevo de Deivid es el ciclo inicial del pedido: realizar una compra, consultar el pedido y cancelarlo antes del pago. El alcance inicial se conserva más abajo como historial, por lo que no describe el estado vigente de la API.
 
-- [Arquitectura, reglas y alcance actual](docs/arquitectura-hexagonal.md).
-- [Ejecutar la API, configuración y ejemplos](docs/api-local.md).
+### Funcionalidades incorporadas
 
-Desde `Ecomerce-PureObsession`: `.\gradlew.bat test --no-daemon` para verificar y `.\gradlew.bat bootRun` para arrancar. Requiere JDK 21.
+| Caso de uso | Implementación | Comportamiento verificado |
+| --- | --- | --- |
+| UC-09 — Realizar compra | `ComprarUseCase` y `POST /api/pedidos` | Valida artículos, cantidades y publicación; toma el precio de la presentación en el servidor, reserva inventario y crea el pedido en estado `CREADO`. |
+| UC-10 — Consultar pedidos | `ConsultarPedidoUseCase`, `GET /api/pedidos/mios` y `GET /api/pedidos/{id}` | Un cliente consulta sus pedidos; el modelo también permite consultar un pedido de invitado mediante `X-Consulta-Pedido`, sin volver a revelar la clave. |
+| UC-11 — Cancelar pedido | `CancelarPedidoUseCase` y `POST /api/pedidos/{id}/cancelacion` | Solo permite cancelar un pedido `CREADO`; libera una vez las reservas de sus líneas y persiste el estado `CANCELADO`. |
 
-Los apartados siguientes conservan la documentación de la entrega 1 y su alcance histórico. Para la implementación actual, consultar los enlaces anteriores.
+Los casos de compra y cancelación se ejecutan dentro de una transacción configurada en `ComprasConfig`: si falla la reserva, una regla de dominio o el guardado, la operación completa se revierte. Las pruebas unitarias que respaldan estos casos están en `src/test/java/com/uniquindio/Ecomerce_PureObsession/application/usecase/ComprarUseCaseTest.java`, `ConsultarPedidoUseCaseTest.java` y `CancelarPedidoUseCaseTest.java`.
+
+### Rutas de pedidos y uso actual
+
+| Método y ruta | Requisito actual | Resultado esperado |
+| --- | --- | --- |
+| `POST /api/pedidos` | Sesión autenticada, CSRF y cuerpo con `telefono`, `direccion` e `items` | `201 Created`, pedido, líneas, total y ubicación del recurso. |
+| `GET /api/pedidos/mios` | Sesión autenticada | Lista únicamente los pedidos de la cuenta autenticada. |
+| `GET /api/pedidos/{id}` | Sesión autenticada; para la variante de invitado el caso de uso acepta `X-Consulta-Pedido` | Pedido autorizado, sin exponer nuevamente la clave de consulta. |
+| `POST /api/pedidos/{id}/cancelacion` | Sesión autenticada, CSRF y autorización sobre el pedido | Pedido cancelado si aún está en `CREADO`; de lo contrario, regla de negocio `422`. |
+
+El checkout calcula el total a partir del precio almacenado de cada presentación; el cliente no envía precios. Un pedido no acepta una presentación repetida, cantidades menores a uno o mayores a mil, ni presentaciones no publicadas. Para una compra de invitado se genera una clave aleatoria, se almacena únicamente su hash y se devuelve una sola vez en la respuesta de creación.
+
+### Estado de integración y pendientes explícitos
+
+La capa de aplicación ya depende del puerto `InventarioVentaPort` para reservar y liberar existencias. Falta el adaptador transaccional definitivo de inventario, responsabilidad de la integración de Brayan; por eso `InventarioVentaTestConfig` solo existe en `src/test` y permite probar el contexto sin falsear código de producción. No debe considerarse que la API esté lista para operar con inventario real hasta conectar ese adaptador.
+
+El caso de uso admite el acceso de invitado por clave, pero `SeguridadConfig` protege actualmente todas las rutas no declaradas de forma explícita, incluidas las de pedidos. Para publicar esa variante por HTTP, Juan debe ajustar la regla de seguridad correspondiente y mantener la validación de `X-Consulta-Pedido` en el caso de uso. Pagos, devoluciones de pedidos confirmados, envíos y una interfaz de carrito no hacen parte del alcance actual.
+
+### Cómo verificar el proyecto
+
+Requiere JDK 21. Desde `Ecomerce-PureObsession` se ejecuta:
+
+```powershell
+.\gradlew.bat test --no-daemon
+```
+
+El resultado esperado es `BUILD SUCCESSFUL`. El reporte HTML para revisar o capturar está en `Ecomerce-PureObsession/build/reports/tests/test/index.html`. La guía operativa y los endpoints que ya estaban implementados se mantienen en [la documentación de API local](docs/api-local.md); las secciones sobre checkout de este README prevalecen cuando haya una diferencia con documentación anterior.
 
 ## Pruebas avanzadas
 
-Esta entrega incorpora pruebas de persistencia, seguridad, integración y errores HTTP sobre el backend real. Todas se encuentran bajo `Ecomerce-PureObsession/src/test/java` y se ejecutan con H2; no requieren MariaDB ni servicios externos.
+Las pruebas avanzadas cubren persistencia, seguridad, integración y errores HTTP sobre el backend real. Todas se encuentran bajo `Ecomerce-PureObsession/src/test/java` y se ejecutan con H2; no requieren MariaDB ni servicios externos.
 
 | Punto solicitado | Evidencia implementada |
 | --- | --- |
@@ -71,9 +101,9 @@ Desde la carpeta `Ecomerce-PureObsession`, ejecutar:
 
 El resultado esperado es `BUILD SUCCESSFUL`. El reporte para revisar o capturar está en `Ecomerce-PureObsession/build/reports/tests/test/index.html`.
 
-# Entrega 1 (histórico)
+# Alcance inicial (histórico)
 
-Marketplace de perfumería: botellas madre, decants, perfumes y testers. Esta entrega demuestra modelado de dominio, agregados e invariantes, no un comercio electrónico terminado.
+Marketplace de perfumería: botellas madre, decants, perfumes y testers. Este alcance demuestra modelado de dominio, agregados e invariantes, no un comercio electrónico terminado.
 
 ## Guía de revisión
 
@@ -103,7 +133,7 @@ cd Ecomerce-PureObsession
 .\gradlew.bat clean test
 ```
 
-El resultado esperado es `BUILD SUCCESSFUL`. Informe HTML: `Ecomerce-PureObsession/build/reports/tests/test/index.html`. Las pruebas de entrega 1 no necesitan MariaDB ni levantar el contexto Spring. No confundir `test` con arrancar la aplicación web, cuya infraestructura es posterior.
+El resultado esperado es `BUILD SUCCESSFUL`. Informe HTML: `Ecomerce-PureObsession/build/reports/tests/test/index.html`. Las pruebas históricas no necesitan MariaDB ni levantar el contexto Spring. No confundir `test` con arrancar la aplicación web, cuya infraestructura es posterior.
 
 ## Estructura
 
@@ -125,4 +155,4 @@ El resultado esperado es `BUILD SUCCESSFUL`. Informe HTML: `Ecomerce-PureObsessi
 
 Se conserva el historial real, sin modificar fechas ni autores anteriores. Según el documento de estado aportado por el equipo, la docente autorizó ramas por persona. La rama de revisión es `Deivid-Canan-Branch`; cualquier integración a main se realiza después de revisar las pruebas.
 
-Las implementaciones en memoria están pensadas para demostraciones secuenciales. Autenticación, UI, pagos, concurrencia y base de datos no son requisitos de entrega 1. Los casos de uso solo diseñados están identificados como tales.
+Las implementaciones en memoria están pensadas para demostraciones secuenciales. Autenticación, UI, pagos, concurrencia y base de datos no eran requisitos del alcance inicial. Los casos de uso solo diseñados están identificados como tales.
