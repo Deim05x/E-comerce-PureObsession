@@ -20,7 +20,7 @@ Una petición anónima a una ruta privada responde 401 porque no tiene identidad
 La operación de inventario responde 403 cuando la sesión tiene el rol VENDEDOR.
 Con ADMIN y un token CSRF válido, la misma solicitud recibe 201 y llega al caso de uso real.
 El postprocesador de usuario y roles representa la sesión que recibe cada petición.
-Así se distingue la autenticación de la autorización basada en roles.
+    Así se distingue la autenticación de la autorización basada en roles.
 
 ### 2. DataJpaTest y SpringBootTest
 
