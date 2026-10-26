@@ -13,32 +13,63 @@ Los apartados siguientes conservan la documentación de la entrega 1 y su alcanc
 
 ## Pruebas avanzadas
 
+Esta entrega incorpora pruebas de persistencia, seguridad, integración y errores HTTP sobre el backend real. Todas se encuentran bajo `Ecomerce-PureObsession/src/test/java` y se ejecutan con H2; no requieren MariaDB ni servicios externos.
+
+| Punto solicitado | Evidencia implementada |
+| --- | --- |
+| 0. Repositorio (mínimo 2) | `PedidoRepositoryPruebasAvanzadasTest` guarda/recupera un pedido y verifica el ranking de fragancias con `JOIN`, `GROUP BY` y orden descendente. |
+| 1. Endpoint seguro | `PruebasHttpAvanzadasTest` valida 401 anónimo, 403 para VENDEDOR y creación autorizada para ADMIN con CSRF. |
+| 2. Slice JPA | `PedidoRepositoryDataJpaPruebaAvanzadaTest` usa `@DataJpaTest` e importa `PedidoJpaAdapter`. |
+| 3. Integración | `PruebasHttpAvanzadasTest` registra una botella desde HTTP y la recupera mediante el repositorio real. |
+| 4. Errores de controller | `InventarioControllerErroresTest` cubre 404, 422 y petición inválida sin invocar el caso de uso. |
+
 ### 1. Seguridad de endpoints
 
-La seguridad se prueba con el contexto completo para ejecutar la cadena real de Spring Security.
-Una petición anónima a una ruta privada responde 401 porque no tiene identidad autenticada.
-La operación de inventario responde 403 cuando la sesión tiene el rol VENDEDOR.
-Con ADMIN y un token CSRF válido, la misma solicitud recibe 201 y llega al caso de uso real.
-El postprocesador de usuario y roles representa la sesión que recibe cada petición.
-Así se distingue la autenticación de la autorización basada en roles.
+La clase `PruebasHttpAvanzadasTest` arranca la aplicación completa y usa la cadena de seguridad real.
+Se eligió `POST /api/inventario/botellas`, porque la configuración la restringe al rol ADMIN.
+Sin sesión, `GET /api/auth/yo` devuelve 401: el servidor no tiene una identidad autenticada.
+Con sesión VENDEDOR y CSRF válido, el POST devuelve 403: conoce al usuario, pero el rol no alcanza.
+Con sesión ADMIN, el mismo POST llega al controller y devuelve 201 porque crea una botella madre.
+El 201 es el éxito REST correcto para crear un recurso; la guía lo resume como un éxito 200.
+Los postprocesadores `user(...).roles(...)` y `csrf()` simulan la sesión y el token que Spring espera.
 
-### 2. DataJpaTest y SpringBootTest
+### 2. `@DataJpaTest` y `@SpringBootTest`
 
-DataJpaTest carga JPA y H2, por eso sirve para revisar el adaptador de pedidos rápidamente.
-El adaptador se importa de forma explícita porque un slice no registra toda la infraestructura.
-Cada prueba del slice se ejecuta en transacción y sus datos se revierten al terminar.
-SpringBootTest también carga controladores, seguridad y casos de uso, por lo que tarda más.
-Esa carga completa permite detectar errores de conexión entre capas que el slice no muestra.
-Usamos el slice para persistencia y el contexto completo para los flujos HTTP importantes.
+`@DataJpaTest` carga el slice de persistencia y una H2 temporal, por eso inicia más rápido que toda la aplicación.
+En Spring Boot 4 se importa desde `org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest`.
+El slice no registra automáticamente el adaptador propio, así que el test declara `@Import(PedidoJpaAdapter.class)`.
+La prueba consulta pedidos activos por fragancia y confirma que cancelar el último pedido activo cambia el resultado.
+El ranking de fragancias se prueba contra H2 con una consulta `JOIN` y `GROUP BY`, verificando cantidad y orden.
+`@SpringBootTest` sí carga controller, seguridad, casos de uso y persistencia; por eso detecta errores entre capas.
+Las pruebas transaccionales revierten sus datos al terminar para que un caso no contamine al siguiente.
 
 ### 3. Integración
 
-La prueba de integración registra una botella por HTTP y cruza controller, caso de uso, JPA y H2.
-No usa Mockito: después de la respuesta consulta el repositorio real para confirmar el guardado.
-La transacción de prueba evita que el escenario deje datos para la siguiente ejecución.
-Es más lenta que una unitaria, pero descubre fallos de mapeo y configuración reales.
-No conviene usarla para todos los bordes porque esos casos son más rápidos con pruebas unitarias.
-El soporte de inventario de test solo permite iniciar el contexto mientras llega su adaptador transaccional.
+La prueba de integración envía un POST válido para registrar una botella madre como ADMIN.
+La solicitud pasa por el controller, las validaciones, el caso de uso, el adaptador JPA y la base H2.
+Después de recibir 201, el test consulta `BotellaMadreRepository` real y verifica nombre y volumen persistidos.
+No hay `@MockitoBean` en este flujo, por lo que ningún componente de negocio o persistencia está simulado.
+Es más lenta que una unitaria, pero puede descubrir problemas de mapeo, transacción o configuración que un mock oculta.
+Los casos de borde se mantienen en pruebas unitarias y de controller para conservar la suite rápida.
+`InventarioVentaTestConfig` existe únicamente en `src/test`; permite iniciar el contexto mientras se integra el adaptador transaccional definitivo de inventario.
+
+### Errores y protección de persistencia
+
+`InventarioControllerErroresTest` usa `@WebMvcTest` con filtros desactivados para concentrarse en la capa HTTP.
+Cuando el caso de uso informa un recurso inexistente, `RecursoNoEncontradoException` se convierte en 404 mediante `ErroresController`.
+Cuando se rompe una regla de negocio, `ReglaDominioException` conserva la respuesta 422 del proyecto.
+Una solicitud vacía responde 400 por validación y se verifica que el caso de uso nunca se invocó.
+`PresentacionesUseCaseNoGuardarTest` confirma con `verify(..., never())` que un recurso inexistente no llama a `guardar`.
+
+### Ejecutar y evidenciar
+
+Desde la carpeta `Ecomerce-PureObsession`, ejecutar:
+
+```powershell
+.\gradlew.bat test
+```
+
+El resultado esperado es `BUILD SUCCESSFUL`. El reporte para revisar o capturar está en `Ecomerce-PureObsession/build/reports/tests/test/index.html`.
 
 # Entrega 1 (histórico)
 
