@@ -27,7 +27,7 @@ El checkout calcula el total a partir del precio almacenado de cada presentació
 
 ### Estado de integración y pendientes explícitos
 
-La capa de aplicación depende de `InventarioVentaPort` para reservar y liberar existencias. `InventarioVentaJpaAdapter` implementa ese puerto con JPA: bloquea de forma pesimista la presentación y su botella madre, descuenta el volumen reservado y lo restaura al cancelar. Compra y cancelación se ejecutan dentro de la misma transacción, por lo que una reserva incompleta no deja inventario descontado. `InventarioVentaJpaAdapterTest` verifica la reserva, la liberación y el rechazo por volumen insuficiente con H2.
+La capa de aplicación ya depende del puerto `InventarioVentaPort` para reservar y liberar existencias. Falta el adaptador transaccional definitivo de inventario, responsabilidad de la integración de Brayan; por eso `InventarioVentaTestConfig` solo existe en `src/test` y permite probar el contexto sin falsear código de producción. No debe considerarse que la API esté lista para operar con inventario real hasta conectar ese adaptador.
 
 El caso de uso admite el acceso de invitado por clave, pero `SeguridadConfig` protege actualmente todas las rutas no declaradas de forma explícita, incluidas las de pedidos. Para publicar esa variante por HTTP, Juan debe ajustar la regla de seguridad correspondiente y mantener la validación de `X-Consulta-Pedido` en el caso de uso. Pagos, devoluciones de pedidos confirmados, envíos y una interfaz de carrito no hacen parte del alcance actual.
 

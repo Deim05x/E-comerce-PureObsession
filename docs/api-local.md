@@ -34,10 +34,6 @@ Usar Postman u otro cliente que conserve cookies. Primero llamar a `GET /api/aut
 | POST `/api/presentaciones/{id}/empaque/validacion` | Sesión | Validar empaque elegido |
 | GET `/api/catalogo` | Público | Presentaciones publicadas con precio |
 | GET `/api/catalogo/fragancias?familia=FLORAL` | Público | Consulta de fragancias |
-| POST `/api/pedidos` | Sesión y CSRF | Crea un pedido y reserva el volumen de las presentaciones seleccionadas |
-| GET `/api/pedidos/mios` | Sesión | Lista los pedidos de la cuenta actual |
-| GET `/api/pedidos/{id}` | Sesión | Consulta un pedido autorizado |
-| POST `/api/pedidos/{id}/cancelacion` | Sesión y CSRF | Cancela un pedido `CREADO` y libera su reserva de inventario |
 
 Todas las mutaciones requieren CSRF. Los errores de formato/campos devuelven 400, credenciales inválidas 401, permisos o CSRF 403, duplicados detectados por BD 409, reglas de negocio 422 y archivos demasiado grandes 413.
 

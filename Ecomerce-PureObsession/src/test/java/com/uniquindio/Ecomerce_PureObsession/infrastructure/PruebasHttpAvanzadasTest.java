@@ -1,10 +1,12 @@
 package com.uniquindio.Ecomerce_PureObsession.infrastructure;
 import com.uniquindio.Ecomerce_PureObsession.domain.repository.BotellaMadreRepository;
+import com.uniquindio.Ecomerce_PureObsession.support.InventarioVentaTestConfig;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(properties={"spring.datasource.url=jdbc:h2:mem:http-avanzadas;DB_CLOSE_DELAY=-1","spring.jpa.hibernate.ddl-auto=create-drop","app.admin.email=","app.admin.clave="})
 @AutoConfigureMockMvc
+@Import(InventarioVentaTestConfig.class)
 @Transactional
 @Rollback
 class PruebasHttpAvanzadasTest {
