@@ -3,7 +3,6 @@ package com.uniquindio.Ecomerce_PureObsession.infrastructure.persistence.jpa;
 import com.uniquindio.Ecomerce_PureObsession.domain.entity.*;
 import com.uniquindio.Ecomerce_PureObsession.domain.repository.PedidoRepository;
 import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.*;
-import com.uniquindio.Ecomerce_PureObsession.support.InventarioVentaTestConfig;
 import jakarta.persistence.EntityManager;
 import java.util.*;
 import org.junit.jupiter.api.Test;
@@ -15,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(properties={"spring.datasource.url=jdbc:h2:mem:pedido-jpa;DB_CLOSE_DELAY=-1","spring.jpa.hibernate.ddl-auto=create-drop","app.admin.email=","app.admin.clave="})
-@Import(InventarioVentaTestConfig.class)
 @Transactional
 class PedidoRepositoryPruebasAvanzadasTest {
     @Autowired PedidoRepository pedidos;
