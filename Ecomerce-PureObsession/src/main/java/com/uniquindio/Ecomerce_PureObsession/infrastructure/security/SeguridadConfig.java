@@ -2,19 +2,28 @@ package com.uniquindio.Ecomerce_PureObsession.infrastructure.security;
 import com.uniquindio.Ecomerce_PureObsession.application.port.out.CuentaRepository;
 import com.uniquindio.Ecomerce_PureObsession.domain.entity.Cuenta;
 import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.Rol;
+import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.context.*;
-import org.springframework.security.web.authentication.session.*;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.oauth2.server.resource.authentication.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.*;
 @Configuration
 public class SeguridadConfig {
@@ -29,12 +38,26 @@ public class SeguridadConfig {
         provider.setPasswordEncoder(encoder);
         return new ProviderManager(provider);
     }
-    @Bean SecurityContextRepository contextos(){return new HttpSessionSecurityContextRepository();}
-    @Bean SessionAuthenticationStrategy sesiones(){return new ChangeSessionIdAuthenticationStrategy();}
-    @Bean SecurityFilterChain filtros(HttpSecurity http,SecurityContextRepository contextos) throws Exception {
-        http.securityContext(c->c.securityContextRepository(contextos))
+    @Bean SecretKey claveJwt(@Value("${app.jwt.secreto:}") String secreto) {
+        byte[] bytes=secreto.getBytes(StandardCharsets.UTF_8);
+        if(secreto.isBlank()) new SecureRandom().nextBytes(bytes=new byte[32]);
+        else if(bytes.length<32) throw new IllegalArgumentException("app.jwt.secreto requiere mínimo 32 bytes.");
+        return new SecretKeySpec(bytes,"HmacSHA256");
+    }
+    @Bean JwtEncoder jwtEncoder(SecretKey clave){return new NimbusJwtEncoder(new ImmutableSecret<>(clave));}
+    @Bean JwtDecoder jwtDecoder(SecretKey clave){return NimbusJwtDecoder.withSecretKey(clave).macAlgorithm(MacAlgorithm.HS256).build();}
+    @Bean SecurityFilterChain filtros(HttpSecurity http) throws Exception {
+        AuthenticationEntryPoint sinToken=(req,res,ex)->{res.setStatus(401);res.setContentType("application/json;charset=UTF-8");res.getWriter().write("{\"mensaje\":\"Token ausente, inválido o expirado.\"}");};
+        var roles=new JwtGrantedAuthoritiesConverter();
+        roles.setAuthoritiesClaimName("rol"); roles.setAuthorityPrefix("ROLE_");
+        var conversor=new JwtAuthenticationConverter();
+        conversor.setJwtGrantedAuthoritiesConverter(roles);
+        // Sin cookies ni sesión, el navegador no envía credenciales solo: CSRF no aplica a una API con Bearer.
+        http.csrf(c->c.disable())
+            .sessionManagement(s->s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(a->a
-                .requestMatchers("/api/auth/csrf","/api/auth/registro","/api/auth/entrar").permitAll()
+                .requestMatchers(HttpMethod.POST,"/api/auth/registro","/api/auth/entrar").permitAll()
+                .requestMatchers(HttpMethod.GET,"/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll()
                 .requestMatchers(HttpMethod.GET,"/api/catalogo","/api/catalogo/fragancias").permitAll()
                 // mios antes del comodín: /api/pedidos/* también coincide con /mios
                 .requestMatchers(HttpMethod.GET,"/api/pedidos/mios").authenticated()
@@ -44,10 +67,10 @@ public class SeguridadConfig {
                 .requestMatchers(HttpMethod.POST,"/api/presentaciones/*/revision").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST,"/api/presentaciones","/api/presentaciones/*/publicacion","/api/presentaciones/*/certificado").hasRole("VENDEDOR")
                 .anyRequest().authenticated())
+            .oauth2ResourceServer(o->o.authenticationEntryPoint(sinToken).jwt(j->j.jwtAuthenticationConverter(conversor)))
             .exceptionHandling(e->e
-                .authenticationEntryPoint((req,res,ex)->{res.setStatus(401);res.setContentType("application/json");res.getWriter().write("{\"mensaje\":\"Inicie sesión.\"}");})
-                .accessDeniedHandler((req,res,ex)->{res.setStatus(403);res.setContentType("application/json");res.getWriter().write("{\"mensaje\":\"Acceso denegado o token CSRF inválido.\"}");}))
-            .logout(l->l.logoutUrl("/api/auth/salir").logoutSuccessHandler((req,res,auth)->res.setStatus(204)));
+                .authenticationEntryPoint(sinToken)
+                .accessDeniedHandler((req,res,ex)->{res.setStatus(403);res.setContentType("application/json;charset=UTF-8");res.getWriter().write("{\"mensaje\":\"Acceso denegado.\"}");}));
         return http.build();
     }
     @Bean ApplicationRunner administradorInicial(CuentaRepository cuentas,PasswordEncoder encoder,Environment env) {
@@ -63,4 +86,3 @@ public class SeguridadConfig {
         };
     }
 }
-
