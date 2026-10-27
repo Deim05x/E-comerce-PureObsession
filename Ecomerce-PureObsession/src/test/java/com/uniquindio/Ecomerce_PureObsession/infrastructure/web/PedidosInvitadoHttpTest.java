@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -31,18 +30,15 @@ class PedidosInvitadoHttpTest {
     private final JsonMapper json=JsonMapper.builder().build();
     record Oferta(String id,UUID botellaId){}
 
-    @Test void invitadoConCsrfCreaPedidoYRecibeClaveDeConsulta() throws Exception {
+    @Test void invitadoSinTokenCreaPedidoYRecibeClaveDeConsulta() throws Exception {
         Oferta oferta=ofertaPublicada();
-        var inicial=mvc.perform(get("/api/auth/csrf")).andExpect(status().isOk()).andReturn();
-        var sesion=(MockHttpSession)inicial.getRequest().getSession(false);
-        JsonNode token=json.readTree(inicial.getResponse().getContentAsString());
         // Campos que el cliente no debe controlar: el servidor los ignora y calcula los suyos.
         String cuerpo="""
             {"nombre":"Invitada","correo":"invitada@test.com","telefono":"3001234567","direccion":"Calle 1",
              "items":[{"presentacionId":"%s","cantidad":2,"precio":1}],
              "total":1,"clienteId":"%s","claveConsulta":"elegida-por-cliente"}
             """.formatted(oferta.id(),UUID.randomUUID());
-        var resultado=mvc.perform(post("/api/pedidos").session(sesion).header(token.get("headerName").asText(),token.get("token").asText())
+        var resultado=mvc.perform(post("/api/pedidos")
                 .contentType(MediaType.APPLICATION_JSON).content(cuerpo))
             .andExpect(status().isCreated()).andReturn();
         JsonNode pedido=json.readTree(resultado.getResponse().getContentAsString());
@@ -53,19 +49,20 @@ class PedidosInvitadoHttpTest {
         assertFalse(clave.isBlank());
         assertNotEquals("elegida-por-cliente",clave);
         assertEquals(100,disponible(oferta));
+        assertNull(resultado.getRequest().getSession(false));
     }
 
-    @Test void invitadoSinCsrfRecibe403YNoReservaInventario() throws Exception {
+    @Test void tokenInvalidoRecibe401YNoReservaInventario() throws Exception {
         Oferta oferta=ofertaPublicada();
-        mvc.perform(post("/api/pedidos").contentType(MediaType.APPLICATION_JSON).content(pedido(oferta.id(),1)))
-            .andExpect(status().isForbidden());
+        mvc.perform(post("/api/pedidos").header("Authorization","Bearer token-invalido").contentType(MediaType.APPLICATION_JSON).content(pedido(oferta.id(),1)))
+            .andExpect(status().isUnauthorized());
         assertEquals(200,disponible(oferta));
     }
 
     @Test void clienteAutenticadoCompraSinRecibirClaveDeInvitado() throws Exception {
         Oferta oferta=ofertaPublicada();
         String email=cuenta(Rol.CLIENTE);
-        String respuesta=mvc.perform(post("/api/pedidos").with(user(email).roles("CLIENTE")).with(csrf())
+        String respuesta=mvc.perform(post("/api/pedidos").with(user(email).roles("CLIENTE"))
                 .contentType(MediaType.APPLICATION_JSON).content(pedido(oferta.id(),1)))
             .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
         JsonNode pedido=json.readTree(respuesta);
@@ -82,16 +79,16 @@ class PedidosInvitadoHttpTest {
             {"telefono":"3001234567","direccion":"Calle 1",
              "items":[{"presentacionId":"%s","cantidad":1},{"presentacionId":"%s","cantidad":5}]}
             """.formatted(primera.id(),segunda.id());
-        mvc.perform(post("/api/pedidos").with(user(email).roles("CLIENTE")).with(csrf())
+        mvc.perform(post("/api/pedidos").with(user(email).roles("CLIENTE"))
                 .contentType(MediaType.APPLICATION_JSON).content(cuerpo))
             .andExpect(status().isUnprocessableEntity());
         assertEquals(200,disponible(primera));
         assertEquals(200,disponible(segunda));
 
-        mvc.perform(post("/api/pedidos").with(user(email).roles("CLIENTE")).with(csrf())
+        mvc.perform(post("/api/pedidos").with(user(email).roles("CLIENTE"))
                 .contentType(MediaType.APPLICATION_JSON).content(pedido(UUID.randomUUID().toString(),1)))
             .andExpect(status().isUnprocessableEntity());
-        mvc.perform(post("/api/pedidos").with(user(email).roles("CLIENTE")).with(csrf())
+        mvc.perform(post("/api/pedidos").with(user(email).roles("CLIENTE"))
                 .contentType(MediaType.APPLICATION_JSON).content(pedido(oferta(cuenta(Rol.VENDEDOR)).id(),1)))
             .andExpect(status().isUnprocessableEntity());
         mvc.perform(get("/api/pedidos/mios").with(user(email).roles("CLIENTE")))
@@ -128,7 +125,7 @@ class PedidosInvitadoHttpTest {
 
     @Test void soloElClienteDuenoConsultaSuPedidoSinClave() throws Exception {
         String dueno=cuenta(Rol.CLIENTE), ajeno=cuenta(Rol.CLIENTE);
-        String id=json.readTree(mvc.perform(post("/api/pedidos").with(user(dueno).roles("CLIENTE")).with(csrf())
+        String id=json.readTree(mvc.perform(post("/api/pedidos").with(user(dueno).roles("CLIENTE"))
                 .contentType(MediaType.APPLICATION_JSON).content(pedido(ofertaPublicada().id(),1)))
             .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asText();
         mvc.perform(get("/api/pedidos/"+id).with(user(dueno).roles("CLIENTE")))
@@ -142,33 +139,33 @@ class PedidosInvitadoHttpTest {
         mvc.perform(get("/api/pedidos/mios")).andExpect(status().isUnauthorized());
     }
 
-    @Test void invitadoCancelaConClaveYCsrfLiberandoInventarioUnaSolaVez() throws Exception {
+    @Test void invitadoCancelaConClaveLiberandoInventarioUnaSolaVez() throws Exception {
         Oferta oferta=ofertaPublicada();
         JsonNode creado=pedidoInvitado(oferta);
         String id=creado.get("id").asText(), clave=creado.get("claveConsulta").asText();
         assertEquals(150,disponible(oferta));
-        var resultado=mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido",clave).with(csrf()))
+        var resultado=mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido",clave))
             .andExpect(status().isOk()).andExpect(jsonPath("$.estado").value("CANCELADO")).andReturn();
         assertFalse(resultado.getResponse().getContentAsString().contains(clave));
         assertEquals(200,disponible(oferta));
         mvc.perform(get("/api/pedidos/"+id).header("X-Consulta-Pedido",clave)).andExpect(jsonPath("$.estado").value("CANCELADO"));
 
-        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido",clave).with(csrf()))
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido",clave))
             .andExpect(status().isUnprocessableEntity());
         assertEquals(200,disponible(oferta));
     }
 
-    @Test void cancelacionDeInvitadoSinCsrfOSinClaveValidaNoModificaElPedido() throws Exception {
+    @Test void cancelacionDeInvitadoConTokenInvalidoOSinClaveValidaNoModificaElPedido() throws Exception {
         Oferta oferta=ofertaPublicada();
         JsonNode creado=pedidoInvitado(oferta);
         String id=creado.get("id").asText(), clave=creado.get("claveConsulta").asText();
-        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido",clave))
-            .andExpect(status().isForbidden());
-        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").with(csrf()))
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido",clave).header("Authorization","Bearer token-invalido"))
+            .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion"))
             .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.id").doesNotExist());
-        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido","clave-erronea").with(csrf()))
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido","clave-erronea"))
             .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.id").doesNotExist());
-        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").with(user(cuenta(Rol.CLIENTE)).roles("CLIENTE")).with(csrf()))
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").with(user(cuenta(Rol.CLIENTE)).roles("CLIENTE")))
             .andExpect(status().isUnprocessableEntity());
         assertEquals(150,disponible(oferta));
         mvc.perform(get("/api/pedidos/"+id).header("X-Consulta-Pedido",clave)).andExpect(jsonPath("$.estado").value("CREADO"));
@@ -177,19 +174,19 @@ class PedidosInvitadoHttpTest {
     @Test void soloElClienteDuenoCancelaSuPedido() throws Exception {
         Oferta oferta=ofertaPublicada();
         String dueno=cuenta(Rol.CLIENTE), ajeno=cuenta(Rol.CLIENTE);
-        String id=json.readTree(mvc.perform(post("/api/pedidos").with(user(dueno).roles("CLIENTE")).with(csrf())
+        String id=json.readTree(mvc.perform(post("/api/pedidos").with(user(dueno).roles("CLIENTE"))
                 .contentType(MediaType.APPLICATION_JSON).content(pedido(oferta.id(),1)))
             .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asText();
-        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").with(user(ajeno).roles("CLIENTE")).with(csrf()))
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").with(user(ajeno).roles("CLIENTE")))
             .andExpect(status().isUnprocessableEntity());
         assertEquals(150,disponible(oferta));
-        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").with(user(dueno).roles("CLIENTE")).with(csrf()))
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").with(user(dueno).roles("CLIENTE")))
             .andExpect(status().isOk()).andExpect(jsonPath("$.estado").value("CANCELADO"));
         assertEquals(200,disponible(oferta));
     }
 
     private JsonNode pedidoInvitado(Oferta oferta) throws Exception {
-        return json.readTree(mvc.perform(post("/api/pedidos").with(csrf())
+        return json.readTree(mvc.perform(post("/api/pedidos")
                 .contentType(MediaType.APPLICATION_JSON).content(pedido(oferta.id(),1)))
             .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
     }
@@ -208,7 +205,7 @@ class PedidosInvitadoHttpTest {
             {"fraganciaId":"%s","botellaMadreId":"%s","tipo":"TESTER","volumenMl":50,
              "precio":95000,"origen":"IMPORTADO","paisOrigen":"FR","original":false}
             """.formatted(botella.fraganciaId(),botella.botellaMadreId());
-        String respuesta=mvc.perform(post("/api/presentaciones").with(user(vendedor).roles("VENDEDOR")).with(csrf())
+        String respuesta=mvc.perform(post("/api/presentaciones").with(user(vendedor).roles("VENDEDOR"))
                 .contentType(MediaType.APPLICATION_JSON).content(contenido))
             .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
         return new Oferta(json.readTree(respuesta).get("id").asText(),botella.botellaMadreId());
@@ -217,7 +214,7 @@ class PedidosInvitadoHttpTest {
     private Oferta ofertaPublicada() throws Exception {
         String vendedor=cuenta(Rol.VENDEDOR);
         Oferta oferta=oferta(vendedor);
-        mvc.perform(post("/api/presentaciones/"+oferta.id()+"/publicacion").with(user(vendedor).roles("VENDEDOR")).with(csrf()))
+        mvc.perform(post("/api/presentaciones/"+oferta.id()+"/publicacion").with(user(vendedor).roles("VENDEDOR")))
             .andExpect(status().isOk());
         return oferta;
     }
