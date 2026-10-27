@@ -142,6 +142,52 @@ class PedidosInvitadoHttpTest {
         mvc.perform(get("/api/pedidos/mios")).andExpect(status().isUnauthorized());
     }
 
+    @Test void invitadoCancelaConClaveYCsrfLiberandoInventarioUnaSolaVez() throws Exception {
+        Oferta oferta=ofertaPublicada();
+        JsonNode creado=pedidoInvitado(oferta);
+        String id=creado.get("id").asText(), clave=creado.get("claveConsulta").asText();
+        assertEquals(150,disponible(oferta));
+        var resultado=mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido",clave).with(csrf()))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.estado").value("CANCELADO")).andReturn();
+        assertFalse(resultado.getResponse().getContentAsString().contains(clave));
+        assertEquals(200,disponible(oferta));
+        mvc.perform(get("/api/pedidos/"+id).header("X-Consulta-Pedido",clave)).andExpect(jsonPath("$.estado").value("CANCELADO"));
+
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido",clave).with(csrf()))
+            .andExpect(status().isUnprocessableEntity());
+        assertEquals(200,disponible(oferta));
+    }
+
+    @Test void cancelacionDeInvitadoSinCsrfOSinClaveValidaNoModificaElPedido() throws Exception {
+        Oferta oferta=ofertaPublicada();
+        JsonNode creado=pedidoInvitado(oferta);
+        String id=creado.get("id").asText(), clave=creado.get("claveConsulta").asText();
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido",clave))
+            .andExpect(status().isForbidden());
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").with(csrf()))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.id").doesNotExist());
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").header("X-Consulta-Pedido","clave-erronea").with(csrf()))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.id").doesNotExist());
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").with(user(cuenta(Rol.CLIENTE)).roles("CLIENTE")).with(csrf()))
+            .andExpect(status().isUnprocessableEntity());
+        assertEquals(150,disponible(oferta));
+        mvc.perform(get("/api/pedidos/"+id).header("X-Consulta-Pedido",clave)).andExpect(jsonPath("$.estado").value("CREADO"));
+    }
+
+    @Test void soloElClienteDuenoCancelaSuPedido() throws Exception {
+        Oferta oferta=ofertaPublicada();
+        String dueno=cuenta(Rol.CLIENTE), ajeno=cuenta(Rol.CLIENTE);
+        String id=json.readTree(mvc.perform(post("/api/pedidos").with(user(dueno).roles("CLIENTE")).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(pedido(oferta.id(),1)))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asText();
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").with(user(ajeno).roles("CLIENTE")).with(csrf()))
+            .andExpect(status().isUnprocessableEntity());
+        assertEquals(150,disponible(oferta));
+        mvc.perform(post("/api/pedidos/"+id+"/cancelacion").with(user(dueno).roles("CLIENTE")).with(csrf()))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.estado").value("CANCELADO"));
+        assertEquals(200,disponible(oferta));
+    }
+
     private JsonNode pedidoInvitado(Oferta oferta) throws Exception {
         return json.readTree(mvc.perform(post("/api/pedidos").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(pedido(oferta.id(),1)))
