@@ -37,9 +37,20 @@ public class HexagonalConfig {
     @Bean CuentasPort cuentas(CuentaRepository r,PasswordEncoder encoder,PlatformTransactionManager tx) {
         return transaccional(new CuentasUseCase(r,encoder::encode),tx);
     }
-    @Bean PresentacionesPort presentaciones(PresentacionRepository p,CuentaRepository c,
+    @Bean CrearPresentacionPort crearPresentacion(PresentacionRepository p,CuentaRepository c,
+            BotellaMadreRepository b,PlatformTransactionManager tx) {
+        return transaccional(new CrearPresentacionUseCase(p,c,b),tx);
+    }
+    @Bean PublicarPresentacionPort publicarPresentacion(PresentacionRepository p,CuentaRepository c,
             CertificadoRepository cert,BotellaMadreRepository b,PlatformTransactionManager tx) {
-        return transaccional(new PresentacionesUseCase(p,c,cert,b),tx);
+        return transaccional(new PublicarPresentacionUseCase(p,c,cert,b),tx);
+    }
+    @Bean ConsultarPresentacionesPort consultarPresentaciones(PresentacionRepository p,
+            BotellaMadreRepository b,PlatformTransactionManager tx) {
+        return transaccional(new ConsultarPresentacionesUseCase(p,b),tx);
+    }
+    @Bean GestionarCertificadoPort gestionarCertificado(PresentacionRepository p,CuentaRepository c,
+            CertificadoRepository cert,PlatformTransactionManager tx) {
+        return transaccional(new GestionarCertificadoUseCase(p,c,cert),tx);
     }
 }
-
