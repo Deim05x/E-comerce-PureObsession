@@ -20,7 +20,7 @@ class PresentacionesUseCaseNoGuardarTest {
     @Mock CuentaRepository cuentas;
     @Mock CertificadoRepository certificados;
     @Mock BotellaMadreRepository botellas;
-    @InjectMocks PresentacionesUseCase casoDeUso;
+    @InjectMocks PublicarPresentacionUseCase casoDeUso;
 
     @Test void noDeberiaGuardarCuandoLaPresentacionNoExiste() {
         UUID id=UUID.randomUUID();
@@ -28,7 +28,7 @@ class PresentacionesUseCaseNoGuardarTest {
         when(cuentas.buscarPorEmail("vendedor@prueba.com")).thenReturn(Optional.of(vendedor));
         when(presentaciones.buscarPorId(id)).thenReturn(Optional.empty());
 
-        assertThrows(RecursoNoEncontradoException.class,()->casoDeUso.publicar("vendedor@prueba.com",id));
+        assertThrows(RecursoNoEncontradoException.class,()->casoDeUso.ejecutar("vendedor@prueba.com",id));
 
         verify(presentaciones,never()).guardar(any());
         verify(botellas,never()).guardar(any());
