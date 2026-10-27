@@ -36,6 +36,10 @@ public class SeguridadConfig {
             .authorizeHttpRequests(a->a
                 .requestMatchers("/api/auth/csrf","/api/auth/registro","/api/auth/entrar").permitAll()
                 .requestMatchers(HttpMethod.GET,"/api/catalogo","/api/catalogo/fragancias").permitAll()
+                // mios antes del comodín: /api/pedidos/* también coincide con /mios
+                .requestMatchers(HttpMethod.GET,"/api/pedidos/mios").authenticated()
+                .requestMatchers(HttpMethod.GET,"/api/pedidos/*").permitAll()
+                .requestMatchers(HttpMethod.POST,"/api/pedidos","/api/pedidos/*/cancelacion").permitAll()
                 .requestMatchers("/api/inventario/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST,"/api/presentaciones/*/revision").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST,"/api/presentaciones","/api/presentaciones/*/publicacion","/api/presentaciones/*/certificado").hasRole("VENDEDOR")
