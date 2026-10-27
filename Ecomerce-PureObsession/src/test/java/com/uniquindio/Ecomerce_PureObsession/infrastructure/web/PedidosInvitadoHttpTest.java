@@ -98,6 +98,56 @@ class PedidosInvitadoHttpTest {
             .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
     }
 
+    @Test void invitadoConsultaSuPedidoConClaveSinExponerlaNiCrearSesion() throws Exception {
+        JsonNode creado=pedidoInvitado(ofertaPublicada());
+        String id=creado.get("id").asText(), clave=creado.get("claveConsulta").asText();
+        var resultado=mvc.perform(get("/api/pedidos/"+id).header("X-Consulta-Pedido",clave))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id)).andExpect(jsonPath("$.estado").value("CREADO"))
+            .andReturn();
+        JsonNode consultado=json.readTree(resultado.getResponse().getContentAsString());
+        assertTrue(consultado.path("claveConsulta").isNull()||consultado.path("claveConsulta").isMissingNode());
+        assertFalse(resultado.getResponse().getContentAsString().contains(clave));
+        assertNull(resultado.getRequest().getSession(false));
+        mvc.perform(get("/api/pedidos/"+id).header("X-Consulta-Pedido",clave)).andExpect(jsonPath("$.estado").value("CREADO"));
+    }
+
+    @Test void consultaDeInvitadoSinClaveOConClaveErroneaNoDevuelveDatos() throws Exception {
+        String id=pedidoInvitado(ofertaPublicada()).get("id").asText();
+        String sinClave=mvc.perform(get("/api/pedidos/"+id))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.id").doesNotExist())
+            .andReturn().getResponse().getContentAsString();
+        String erronea=mvc.perform(get("/api/pedidos/"+id).header("X-Consulta-Pedido","clave-erronea"))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.id").doesNotExist())
+            .andReturn().getResponse().getContentAsString();
+        assertFalse(sinClave.contains("invitada@test.com"));
+        assertFalse(erronea.contains("invitada@test.com")||erronea.contains("clave-erronea"));
+        // Una sesión ajena tampoco reemplaza la clave de invitado.
+        mvc.perform(get("/api/pedidos/"+id).with(user(cuenta(Rol.CLIENTE)).roles("CLIENTE")))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.id").doesNotExist());
+    }
+
+    @Test void soloElClienteDuenoConsultaSuPedidoSinClave() throws Exception {
+        String dueno=cuenta(Rol.CLIENTE), ajeno=cuenta(Rol.CLIENTE);
+        String id=json.readTree(mvc.perform(post("/api/pedidos").with(user(dueno).roles("CLIENTE")).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(pedido(ofertaPublicada().id(),1)))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asText();
+        mvc.perform(get("/api/pedidos/"+id).with(user(dueno).roles("CLIENTE")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id));
+        mvc.perform(get("/api/pedidos/"+id).with(user(ajeno).roles("CLIENTE")))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.id").doesNotExist());
+        mvc.perform(get("/api/pedidos/"+id)).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.id").doesNotExist());
+    }
+
+    @Test void misPedidosSigueRequiriendoSesion() throws Exception {
+        mvc.perform(get("/api/pedidos/mios")).andExpect(status().isUnauthorized());
+    }
+
+    private JsonNode pedidoInvitado(Oferta oferta) throws Exception {
+        return json.readTree(mvc.perform(post("/api/pedidos").with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(pedido(oferta.id(),1)))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+    }
+
     private String cuenta(Rol rol) {
         String email=UUID.randomUUID()+"@test.com";
         String cedula=Long.toString(Math.abs(UUID.randomUUID().getMostSignificantBits()%1000000000000L)+100000);
