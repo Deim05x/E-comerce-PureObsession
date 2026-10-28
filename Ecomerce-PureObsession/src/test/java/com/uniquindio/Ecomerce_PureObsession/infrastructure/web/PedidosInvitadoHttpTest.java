@@ -30,6 +30,7 @@ class PedidosInvitadoHttpTest {
     private final JsonMapper json=JsonMapper.builder().build();
     record Oferta(String id,UUID botellaId){}
 
+    @SuppressWarnings("deprecation")
     @Test void invitadoSinTokenCreaPedidoYRecibeClaveDeConsulta() throws Exception {
         Oferta oferta=ofertaPublicada();
         // Campos que el cliente no debe controlar: el servidor los ignora y calcula los suyos.
@@ -59,6 +60,7 @@ class PedidosInvitadoHttpTest {
         assertEquals(200,disponible(oferta));
     }
 
+    @SuppressWarnings("deprecation")
     @Test void clienteAutenticadoCompraSinRecibirClaveDeInvitado() throws Exception {
         Oferta oferta=ofertaPublicada();
         String email=cuenta(Rol.CLIENTE);
@@ -70,6 +72,7 @@ class PedidosInvitadoHttpTest {
         assertTrue(pedido.path("claveConsulta").isNull()||pedido.path("claveConsulta").isMissingNode());
     }
 
+    @SuppressWarnings("deprecation")
     @Test void articuloInvalidoNoPersistePedidoNiReservaParcial() throws Exception {
         String email=cuenta(Rol.CLIENTE);
         Oferta a=ofertaPublicada(), b=ofertaPublicada();
@@ -97,6 +100,7 @@ class PedidosInvitadoHttpTest {
 
     @Test void invitadoConsultaSuPedidoConClaveSinExponerlaNiCrearSesion() throws Exception {
         JsonNode creado=pedidoInvitado(ofertaPublicada());
+        @SuppressWarnings("deprecation")
         String id=creado.get("id").asText(), clave=creado.get("claveConsulta").asText();
         var resultado=mvc.perform(get("/api/pedidos/"+id).header("X-Consulta-Pedido",clave))
             .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id)).andExpect(jsonPath("$.estado").value("CREADO"))
@@ -108,6 +112,7 @@ class PedidosInvitadoHttpTest {
         mvc.perform(get("/api/pedidos/"+id).header("X-Consulta-Pedido",clave)).andExpect(jsonPath("$.estado").value("CREADO"));
     }
 
+    @SuppressWarnings("deprecation")
     @Test void consultaDeInvitadoSinClaveOConClaveErroneaNoDevuelveDatos() throws Exception {
         String id=pedidoInvitado(ofertaPublicada()).get("id").asText();
         String sinClave=mvc.perform(get("/api/pedidos/"+id))
@@ -123,6 +128,7 @@ class PedidosInvitadoHttpTest {
             .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.id").doesNotExist());
     }
 
+    @SuppressWarnings("deprecation")
     @Test void soloElClienteDuenoConsultaSuPedidoSinClave() throws Exception {
         String dueno=cuenta(Rol.CLIENTE), ajeno=cuenta(Rol.CLIENTE);
         String id=json.readTree(mvc.perform(post("/api/pedidos").with(user(dueno).roles("CLIENTE"))
@@ -139,6 +145,7 @@ class PedidosInvitadoHttpTest {
         mvc.perform(get("/api/pedidos/mios")).andExpect(status().isUnauthorized());
     }
 
+    @SuppressWarnings("deprecation")
     @Test void invitadoCancelaConClaveLiberandoInventarioUnaSolaVez() throws Exception {
         Oferta oferta=ofertaPublicada();
         JsonNode creado=pedidoInvitado(oferta);
@@ -155,6 +162,7 @@ class PedidosInvitadoHttpTest {
         assertEquals(200,disponible(oferta));
     }
 
+    @SuppressWarnings("deprecation")
     @Test void cancelacionDeInvitadoConTokenInvalidoOSinClaveValidaNoModificaElPedido() throws Exception {
         Oferta oferta=ofertaPublicada();
         JsonNode creado=pedidoInvitado(oferta);
@@ -171,6 +179,7 @@ class PedidosInvitadoHttpTest {
         mvc.perform(get("/api/pedidos/"+id).header("X-Consulta-Pedido",clave)).andExpect(jsonPath("$.estado").value("CREADO"));
     }
 
+    @SuppressWarnings("deprecation")
     @Test void soloElClienteDuenoCancelaSuPedido() throws Exception {
         Oferta oferta=ofertaPublicada();
         String dueno=cuenta(Rol.CLIENTE), ajeno=cuenta(Rol.CLIENTE);
@@ -199,6 +208,7 @@ class PedidosInvitadoHttpTest {
     }
 
     /** Tester de 50 ml sobre una botella madre de 200 ml: alcanza para 4 unidades. */
+    @SuppressWarnings("deprecation")
     private Oferta oferta(String vendedor) throws Exception {
         var botella=registro.ejecutar(new RegistrarBotellaMadreRequest("Aroma",FamiliaOlfativa.FLORAL,Concentracion.EAU_DE_PARFUM,"A","B","C",200));
         String contenido="""

@@ -50,6 +50,7 @@ class FlujoHexagonalTest {
         else cuentas.registrar(new RegistrarCuentaRequest("Persona",cedula,email,"ClavePrueba2026",rol));
         return email;
     }
+    @SuppressWarnings("deprecation")
     String nuevaPresentacion(String vendedor,boolean original,String tipo) throws Exception {
         var botella=registro.ejecutar(new RegistrarBotellaMadreRequest("Aroma",FamiliaOlfativa.FLORAL,Concentracion.EAU_DE_PARFUM,"A","B","C",200));
         String contenido="""
@@ -60,6 +61,7 @@ class FlujoHexagonalTest {
             .contentType(MediaType.APPLICATION_JSON).content(contenido)).andExpect(status().isCreated()).andReturn();
         return json.readTree(resultado.getResponse().getContentAsString()).get("id").asText();
     }
+    @SuppressWarnings("deprecation")
     @Test void jakartaRechazaCamposFaltantesYNoAdmiteRegistroAdmin() throws Exception {
         mvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON).content("{}"))
             .andExpect(status().isBadRequest()).andExpect(jsonPath("$.campos.cedula").exists());
@@ -67,6 +69,7 @@ class FlujoHexagonalTest {
             .content("{\"nombre\":\"Uno\",\"cedula\":\"123456789\",\"email\":\"admin@test.com\",\"clave\":\"ClavePrueba2026\",\"rol\":\"ADMIN\"}"))
             .andExpect(status().isUnprocessableEntity());
     }
+    @SuppressWarnings("deprecation")
     @Test void registroYLoginDevuelvenJwtSinCrearSesion() throws Exception {
         String email=UUID.randomUUID()+"@test.com";
         String registroJson="""
@@ -105,6 +108,7 @@ class FlujoHexagonalTest {
             .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.campos.volumenMl").exists());
     }
+    @SuppressWarnings("deprecation")
     @Test void certificadoRequierePropietarioRevisionYDespublicaAlCambiar() throws Exception {
         String vendedor=cuenta(Rol.VENDEDOR), otro=cuenta(Rol.VENDEDOR), admin=cuenta(Rol.ADMIN);
         String id=nuevaPresentacion(vendedor,true,"DECANT");
@@ -133,6 +137,7 @@ class FlujoHexagonalTest {
         mvc.perform(post("/api/presentaciones/"+id+"/publicacion").with(user(vendedor).roles("VENDEDOR")))
             .andExpect(status().isUnprocessableEntity());
     }
+    @SuppressWarnings("deprecation")
     @Test void testerPublicadoRechazaEmpaqueRegalo() throws Exception {
         String vendedor=cuenta(Rol.VENDEDOR);
         String id=nuevaPresentacion(vendedor,false,"TESTER");

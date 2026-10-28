@@ -42,7 +42,8 @@ class PruebasHttpAvanzadasTest {
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.nombreFragancia").value("Iris"));
     }
 
-    @Test void deberiaRecorrerControllerCasoDeUsoRepositorioYH2SinMocks() throws Exception {
+    @SuppressWarnings("deprecation")
+@Test void deberiaRecorrerControllerCasoDeUsoRepositorioYH2SinMocks() throws Exception {
         String cuerpo=mvc.perform(post("/api/inventario/botellas").with(user("admin").roles("ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON).content(solicitud("Neroli",120)))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.volumenDisponibleMl").value(120))
@@ -57,7 +58,8 @@ class PruebasHttpAvanzadasTest {
     }
 
     /** Token real: la cuenta se guarda con BCrypt y el JWT sale de POST /api/auth/entrar. */
-    private String bearer(Rol rol) throws Exception {
+    @SuppressWarnings("deprecation")
+private String bearer(Rol rol) throws Exception {
         String email=UUID.randomUUID()+"@test.com";
         String cedula=Long.toString(Math.abs(UUID.randomUUID().getMostSignificantBits()%1000000000000L)+100000);
         cuentas.guardar(Cuenta.crear(UUID.randomUUID(),"Persona",cedula,email,encoder.encode("ClavePrueba2026"),rol));

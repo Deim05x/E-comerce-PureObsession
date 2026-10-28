@@ -27,6 +27,7 @@ class InventarioControllerErroresTest {
                 .andExpect(status().isNotFound());
     }
 
+    @SuppressWarnings("deprecation")
     @Test void deberiaResponder422CuandoSeRompeUnaReglaDeNegocio() throws Exception {
         when(registro.ejecutar(any())).thenThrow(new ReglaDominioException("El volumen no alcanza."));
         mvc.perform(post("/api/inventario/botellas").contentType(MediaType.APPLICATION_JSON).content(solicitud()))
