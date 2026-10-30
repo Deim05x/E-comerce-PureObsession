@@ -11,14 +11,32 @@ import java.util.*;
 public class BotellaMadreJpaAdapter implements BotellaMadreRepository {
     @PersistenceContext private EntityManager em;
     public BotellaMadre guardar(BotellaMadre b) {
+        BotellaJpa anterior=em.find(BotellaJpa.class,b.getId());
+        FraganciaJpa fragancia=em.find(FraganciaJpa.class,b.getFragancia().getId());
+        if((anterior!=null && anterior.eliminada) || (fragancia!=null && fragancia.eliminada))
+            throw new com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException("No se puede restaurar inventario eliminado al guardar.");
         em.merge(BotellaMadrePersistenceMapper.aJpa(b)); return b;
     }
     public Optional<BotellaMadre> buscarPorId(UUID id) {
-        return Optional.ofNullable(em.find(BotellaJpa.class,id,LockModeType.PESSIMISTIC_WRITE)).map(BotellaMadrePersistenceMapper::aDominio);
+        return Optional.ofNullable(em.find(BotellaJpa.class,id,LockModeType.PESSIMISTIC_WRITE))
+            .filter(b->!b.eliminada && !b.fragancia.eliminada).map(BotellaMadrePersistenceMapper::aDominio);
     }
     public List<BotellaMadre> listarTodas() {
-        return em.createQuery("select b from BotellaJpa b",BotellaJpa.class).getResultList().stream().map(BotellaMadrePersistenceMapper::aDominio).toList();
+        return em.createQuery("select b from BotellaJpa b where b.eliminada=false and b.fragancia.eliminada=false",BotellaJpa.class)
+            .getResultList().stream().map(BotellaMadrePersistenceMapper::aDominio).toList();
     }
-    public void eliminar(UUID id) { BotellaJpa j=em.find(BotellaJpa.class,id); if(j!=null) em.remove(j); }
+    public void eliminar(UUID id) {
+        BotellaJpa botella=em.find(BotellaJpa.class,id,LockModeType.PESSIMISTIC_WRITE);
+        if(botella==null || botella.eliminada) return;
+        botella.eliminada=true;
+        em.flush();
+        long restantes=em.createQuery("select count(b) from BotellaJpa b where b.fragancia.id=:id and b.eliminada=false",Long.class)
+            .setParameter("id",botella.fragancia.id).getSingleResult();
+        if(restantes==0) {
+            botella.fragancia.eliminada=true;
+            botella.fragancia.activa=false;
+            botella.fragancia.publicada=false;
+        }
+    }
 }
 

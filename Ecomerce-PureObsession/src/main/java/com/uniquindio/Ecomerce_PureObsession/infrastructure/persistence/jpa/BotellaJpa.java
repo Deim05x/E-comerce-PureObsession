@@ -7,6 +7,8 @@ public class BotellaJpa {
     @Id UUID id;
     @ManyToOne(optional=false, cascade={CascadeType.PERSIST,CascadeType.MERGE}) FraganciaJpa fragancia;
     int originalMl, disponibleMl;
+    @Column(nullable=false, columnDefinition="boolean default false")
+    boolean eliminada;
     @ElementCollection
     @CollectionTable(name="decant", joinColumns=@JoinColumn(name="botella_id"))
     @MapKeyColumn(name="decant_id")

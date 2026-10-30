@@ -16,7 +16,10 @@ public class PresentacionJpaAdapter implements PresentacionRepository {
         return Optional.ofNullable(em.find(PresentacionJpa.class,id,LockModeType.PESSIMISTIC_WRITE)).map(PresentacionPersistenceMapper::aDominio);
     }
     public List<Presentacion> listarPublicadas() {
-        return em.createQuery("select p from PresentacionJpa p where p.publicada=true",PresentacionJpa.class)
+        return em.createQuery("select p from PresentacionJpa p where p.publicada=true "
+            + "and exists (select b.id from BotellaJpa b where b.fragancia.id=p.fraganciaId "
+            + "and b.eliminada=false and b.fragancia.eliminada=false and b.fragancia.activa=true "
+            + "and b.fragancia.publicada=true and (p.botellaMadreId is null or b.id=p.botellaMadreId))",PresentacionJpa.class)
             .getResultList().stream().map(PresentacionPersistenceMapper::aDominio).toList();
     }
 }
