@@ -24,13 +24,7 @@ public class ConsultarCatalogoUseCase implements com.uniquindio.Ecomerce_PureObs
         if (request == null) {
             throw new ReglaDominioException("La solicitud es obligatoria.");
         }
-        return botellaMadreRepository.listarTodas().stream()
-                .map(BotellaMadre::getFragancia)
-                .distinct()
-                .filter(Fragancia::isActiva)
-                .filter(Fragancia::isPublicada)
-                .filter(fragancia -> request.familiaOlfativa() == null
-                        || fragancia.getFamiliaOlfativa() == request.familiaOlfativa())
+        return botellaMadreRepository.listarFraganciasPublicadas(request.familiaOlfativa()).stream()
                 .map(fragancia -> new FraganciaCatalogoResponse(
                         fragancia.getId(),
                         fragancia.getNombre(),

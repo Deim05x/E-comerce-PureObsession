@@ -45,9 +45,8 @@ public class HexagonalConfig {
             CertificadoRepository cert,BotellaMadreRepository b,PlatformTransactionManager tx) {
         return transaccional(new PublicarPresentacionUseCase(p,c,cert,b),tx);
     }
-    @Bean ConsultarPresentacionesPort consultarPresentaciones(PresentacionRepository p,
-            BotellaMadreRepository b,PlatformTransactionManager tx) {
-        return transaccional(new ConsultarPresentacionesUseCase(p,b),tx);
+    @Bean ConsultarPresentacionesPort consultarPresentaciones(PresentacionRepository p,PlatformTransactionManager tx) {
+        return transaccional(new ConsultarPresentacionesUseCase(p),tx);
     }
     @Bean GestionarCertificadoPort gestionarCertificado(PresentacionRepository p,CuentaRepository c,
             CertificadoRepository cert,PlatformTransactionManager tx) {

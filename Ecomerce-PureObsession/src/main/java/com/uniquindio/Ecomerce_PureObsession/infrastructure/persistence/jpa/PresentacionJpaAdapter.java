@@ -16,11 +16,14 @@ public class PresentacionJpaAdapter implements PresentacionRepository {
         return Optional.ofNullable(em.find(PresentacionJpa.class,id,LockModeType.PESSIMISTIC_WRITE)).map(PresentacionPersistenceMapper::aDominio);
     }
     public List<Presentacion> listarPublicadas() {
-        return em.createQuery("select p from PresentacionJpa p where p.publicada=true "
-            + "and exists (select b.id from BotellaJpa b where b.fragancia.id=p.fraganciaId "
-            + "and b.eliminada=false and b.fragancia.eliminada=false and b.fragancia.activa=true "
-            + "and b.fragancia.publicada=true and (p.botellaMadreId is null or b.id=p.botellaMadreId))",PresentacionJpa.class)
+        return em.createQuery("select p from PresentacionJpa p, FraganciaJpa f where f.id=p.fraganciaId and "
+            + ConsultaCatalogoJpaAdapter.PRESENTACION_PUBLICA + " order by lower(f.nombre), f.id, p.id",PresentacionJpa.class)
             .getResultList().stream().map(PresentacionPersistenceMapper::aDominio).toList();
+    }
+    public boolean estaEnCatalogo(UUID id) {
+        return em.createQuery("select count(p) from PresentacionJpa p, FraganciaJpa f where f.id=p.fraganciaId and "
+            + ConsultaCatalogoJpaAdapter.PRESENTACION_PUBLICA + " and p.id=:id",Long.class)
+            .setParameter("id",id).getSingleResult()>0;
     }
 }
 

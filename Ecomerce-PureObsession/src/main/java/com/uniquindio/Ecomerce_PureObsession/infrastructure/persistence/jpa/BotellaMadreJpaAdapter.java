@@ -25,6 +25,12 @@ public class BotellaMadreJpaAdapter implements BotellaMadreRepository {
         return em.createQuery("select b from BotellaJpa b where b.eliminada=false and b.fragancia.eliminada=false",BotellaJpa.class)
             .getResultList().stream().map(BotellaMadrePersistenceMapper::aDominio).toList();
     }
+    public List<Fragancia> listarFraganciasPublicadas(FamiliaOlfativa familia) {
+        var query=em.createQuery("select f from FraganciaJpa f where " + ConsultaCatalogoJpaAdapter.FRAGANCIA_PUBLICA
+            + (familia==null ? "" : " and f.familia=:familia") + " order by lower(f.nombre), f.id",FraganciaJpa.class);
+        if(familia!=null) query.setParameter("familia",familia);
+        return query.getResultList().stream().map(BotellaMadrePersistenceMapper::aDominio).toList();
+    }
     public void eliminar(UUID id) {
         BotellaJpa botella=em.find(BotellaJpa.class,id,LockModeType.PESSIMISTIC_WRITE);
         if(botella==null || botella.eliminada) return;

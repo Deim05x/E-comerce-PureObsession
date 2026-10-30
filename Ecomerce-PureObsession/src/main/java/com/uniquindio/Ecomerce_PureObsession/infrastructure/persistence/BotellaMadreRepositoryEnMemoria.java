@@ -37,4 +37,12 @@ public class BotellaMadreRepositoryEnMemoria implements BotellaMadreRepository {
     public void eliminar(UUID id) {
         if (almacen.containsKey(id)) eliminadas.add(id);
     }
+
+    @Override
+    public List<com.uniquindio.Ecomerce_PureObsession.domain.entity.Fragancia> listarFraganciasPublicadas(
+            com.uniquindio.Ecomerce_PureObsession.domain.valueObject.FamiliaOlfativa familia) {
+        return listarTodas().stream().map(BotellaMadre::getFragancia).distinct()
+                .filter(f -> f.isActiva() && f.isPublicada())
+                .filter(f -> familia==null || f.getFamiliaOlfativa()==familia).toList();
+    }
 }
