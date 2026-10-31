@@ -10,23 +10,20 @@ import java.util.*;
 public class PresentacionJpaAdapter implements PresentacionRepository {
     @PersistenceContext private EntityManager em;
     public Presentacion guardar(Presentacion p) {
-        PresentacionJpa j=new PresentacionJpa(); j.id=p.getId(); j.vendedorId=p.getVendedorId();
-        j.fraganciaId=p.getFraganciaId(); j.botellaMadreId=p.getBotellaMadreId(); j.tipo=p.getTipo();
-        j.volumenMl=p.getVolumenMl(); j.precio=p.getPrecio(); j.origen=p.getOrigen();
-        j.paisOrigen=p.getPaisOrigen(); j.original=p.isOriginal(); j.publicada=p.isPublicada();
-        em.merge(j); return p;
+        em.merge(PresentacionPersistenceMapper.aJpa(p)); return p;
     }
     public Optional<Presentacion> buscarPorId(UUID id) {
-        return Optional.ofNullable(em.find(PresentacionJpa.class,id,LockModeType.PESSIMISTIC_WRITE)).map(this::mapear);
+        return Optional.ofNullable(em.find(PresentacionJpa.class,id,LockModeType.PESSIMISTIC_WRITE)).map(PresentacionPersistenceMapper::aDominio);
     }
     public List<Presentacion> listarPublicadas() {
-        return em.createQuery("select p from PresentacionJpa p where p.publicada=true",PresentacionJpa.class)
-            .getResultList().stream().map(this::mapear).toList();
+        return em.createQuery("select p from PresentacionJpa p, FraganciaJpa f where f.id=p.fraganciaId and "
+            + ConsultaCatalogoJpaAdapter.PRESENTACION_PUBLICA + " order by lower(f.nombre), f.id, p.id",PresentacionJpa.class)
+            .getResultList().stream().map(PresentacionPersistenceMapper::aDominio).toList();
     }
-    private Presentacion mapear(PresentacionJpa p) {
-        Presentacion d=Presentacion.crear(p.id,p.vendedorId,p.fraganciaId,p.botellaMadreId,p.tipo,p.volumenMl,p.precio,p.origen,p.paisOrigen,p.original);
-        if(p.publicada) d.publicar(true);
-        return d;
+    public boolean estaEnCatalogo(UUID id) {
+        return em.createQuery("select count(p) from PresentacionJpa p, FraganciaJpa f where f.id=p.fraganciaId and "
+            + ConsultaCatalogoJpaAdapter.PRESENTACION_PUBLICA + " and p.id=:id",Long.class)
+            .setParameter("id",id).getSingleResult()>0;
     }
 }
 

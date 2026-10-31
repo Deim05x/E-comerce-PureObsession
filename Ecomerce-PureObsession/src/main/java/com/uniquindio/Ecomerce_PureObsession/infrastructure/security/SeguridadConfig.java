@@ -58,7 +58,7 @@ public class SeguridadConfig {
             .authorizeHttpRequests(a->a
                 .requestMatchers(HttpMethod.POST,"/api/auth/registro","/api/auth/entrar").permitAll()
                 .requestMatchers(HttpMethod.GET,"/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll()
-                .requestMatchers(HttpMethod.GET,"/api/catalogo","/api/catalogo/fragancias").permitAll()
+                .requestMatchers(HttpMethod.GET,"/api/catalogo","/api/catalogo/**").permitAll()
                 // mios antes del comodín: /api/pedidos/* también coincide con /mios
                 .requestMatchers(HttpMethod.GET,"/api/pedidos/mios").authenticated()
                 .requestMatchers(HttpMethod.GET,"/api/pedidos/*").permitAll()

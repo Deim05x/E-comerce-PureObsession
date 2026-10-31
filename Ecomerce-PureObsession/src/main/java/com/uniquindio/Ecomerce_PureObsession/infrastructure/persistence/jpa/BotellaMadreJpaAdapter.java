@@ -11,33 +11,38 @@ import java.util.*;
 public class BotellaMadreJpaAdapter implements BotellaMadreRepository {
     @PersistenceContext private EntityManager em;
     public BotellaMadre guardar(BotellaMadre b) {
-        BotellaJpa j=new BotellaJpa(); j.id=b.getId(); j.originalMl=b.getVolumenOriginal().mililitros();
-        j.disponibleMl=b.getVolumenDisponible().mililitros();
-        Fragancia f=b.getFragancia(); FraganciaJpa jf=new FraganciaJpa();
-        jf.id=f.getId(); jf.nombre=f.getNombre(); jf.familia=f.getFamiliaOlfativa(); jf.concentracion=f.getConcentracion();
-        jf.activa=f.isActiva(); jf.publicada=f.isPublicada();
-        if(f.getPiramideOlfativa()!=null) {
-            jf.salida=f.getPiramideOlfativa().notasSalida(); jf.corazon=f.getPiramideOlfativa().notasCorazon();
-            jf.fondo=f.getPiramideOlfativa().notasFondo();
-        }
-        j.fragancia=jf; b.getDecants().forEach(d->j.decants.put(d.getId(),d.getVolumen().mililitros()));
-        em.merge(j); return b;
+        BotellaJpa anterior=em.find(BotellaJpa.class,b.getId());
+        FraganciaJpa fragancia=em.find(FraganciaJpa.class,b.getFragancia().getId());
+        if((anterior!=null && anterior.eliminada) || (fragancia!=null && fragancia.eliminada))
+            throw new com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException("No se puede restaurar inventario eliminado al guardar.");
+        em.merge(BotellaMadrePersistenceMapper.aJpa(b)); return b;
     }
     public Optional<BotellaMadre> buscarPorId(UUID id) {
-        return Optional.ofNullable(em.find(BotellaJpa.class,id,LockModeType.PESSIMISTIC_WRITE)).map(this::mapear);
+        return Optional.ofNullable(em.find(BotellaJpa.class,id,LockModeType.PESSIMISTIC_WRITE))
+            .filter(b->!b.eliminada && !b.fragancia.eliminada).map(BotellaMadrePersistenceMapper::aDominio);
     }
     public List<BotellaMadre> listarTodas() {
-        return em.createQuery("select b from BotellaJpa b",BotellaJpa.class).getResultList().stream().map(this::mapear).toList();
+        return em.createQuery("select b from BotellaJpa b where b.eliminada=false and b.fragancia.eliminada=false",BotellaJpa.class)
+            .getResultList().stream().map(BotellaMadrePersistenceMapper::aDominio).toList();
     }
-    public void eliminar(UUID id) { BotellaJpa j=em.find(BotellaJpa.class,id); if(j!=null) em.remove(j); }
-    private BotellaMadre mapear(BotellaJpa j) {
-        FraganciaJpa f=j.fragancia;
-        Fragancia frag=Fragancia.crear(f.id,f.nombre,f.familia,f.concentracion,
-            f.salida==null ? null : PiramideOlfativa.crear(f.salida,f.corazon,f.fondo));
-        if(f.publicada) frag.publicar();
-        if(!f.activa) frag.desactivar();
-        return BotellaMadre.reconstituir(j.id,frag,j.originalMl,j.disponibleMl,
-            j.decants.entrySet().stream().map(e->new BotellaMadre.DecantGuardado(e.getKey(),e.getValue())).toList());
+    public List<Fragancia> listarFraganciasPublicadas(FamiliaOlfativa familia) {
+        var query=em.createQuery("select f from FraganciaJpa f where " + ConsultaCatalogoJpaAdapter.FRAGANCIA_PUBLICA
+            + (familia==null ? "" : " and f.familia=:familia") + " order by lower(f.nombre), f.id",FraganciaJpa.class);
+        if(familia!=null) query.setParameter("familia",familia);
+        return query.getResultList().stream().map(BotellaMadrePersistenceMapper::aDominio).toList();
+    }
+    public void eliminar(UUID id) {
+        BotellaJpa botella=em.find(BotellaJpa.class,id,LockModeType.PESSIMISTIC_WRITE);
+        if(botella==null || botella.eliminada) return;
+        botella.eliminada=true;
+        em.flush();
+        long restantes=em.createQuery("select count(b) from BotellaJpa b where b.fragancia.id=:id and b.eliminada=false",Long.class)
+            .setParameter("id",botella.fragancia.id).getSingleResult();
+        if(restantes==0) {
+            botella.fragancia.eliminada=true;
+            botella.fragancia.activa=false;
+            botella.fragancia.publicada=false;
+        }
     }
 }
 

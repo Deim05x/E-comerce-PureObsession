@@ -10,5 +10,7 @@ public interface BotellaMadreRepository {
     BotellaMadre guardar(BotellaMadre botellaMadre);
     Optional<BotellaMadre> buscarPorId(UUID id);
     List<BotellaMadre> listarTodas();
+    List<com.uniquindio.Ecomerce_PureObsession.domain.entity.Fragancia> listarFraganciasPublicadas(
+            com.uniquindio.Ecomerce_PureObsession.domain.valueObject.FamiliaOlfativa familia);
     void eliminar (UUID id);
 }

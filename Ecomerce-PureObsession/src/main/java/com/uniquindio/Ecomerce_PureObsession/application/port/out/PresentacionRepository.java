@@ -5,5 +5,6 @@ public interface PresentacionRepository {
     Presentacion guardar(Presentacion presentacion);
     Optional<Presentacion> buscarPorId(UUID id);
     List<Presentacion> listarPublicadas();
+    boolean estaEnCatalogo(UUID id);
 }
 

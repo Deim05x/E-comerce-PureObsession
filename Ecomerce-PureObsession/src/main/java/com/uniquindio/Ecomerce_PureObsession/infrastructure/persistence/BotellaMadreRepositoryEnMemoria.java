@@ -13,25 +13,36 @@ import java.util.UUID;
 public class BotellaMadreRepositoryEnMemoria implements BotellaMadreRepository {
 
     private final Map<UUID, BotellaMadre> almacen = new HashMap<>();
+    private final java.util.Set<UUID> eliminadas = new java.util.HashSet<>();
 
     @Override
     public BotellaMadre guardar(BotellaMadre botellaMadre) {
+        if (eliminadas.contains(botellaMadre.getId()))
+            throw new com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException("La botella fue eliminada.");
         almacen.put(botellaMadre.getId(), botellaMadre);
         return botellaMadre;
     }
 
     @Override
     public Optional<BotellaMadre> buscarPorId(UUID id) {
-        return Optional.ofNullable(almacen.get(id));
+        return eliminadas.contains(id) ? Optional.empty() : Optional.ofNullable(almacen.get(id));
     }
 
     @Override
     public List<BotellaMadre> listarTodas() {
-        return new ArrayList<>(almacen.values());
+        return almacen.values().stream().filter(b -> !eliminadas.contains(b.getId())).toList();
     }
 
     @Override
     public void eliminar(UUID id) {
-        almacen.remove(id);
+        if (almacen.containsKey(id)) eliminadas.add(id);
+    }
+
+    @Override
+    public List<com.uniquindio.Ecomerce_PureObsession.domain.entity.Fragancia> listarFraganciasPublicadas(
+            com.uniquindio.Ecomerce_PureObsession.domain.valueObject.FamiliaOlfativa familia) {
+        return listarTodas().stream().map(BotellaMadre::getFragancia).distinct()
+                .filter(f -> f.isActiva() && f.isPublicada())
+                .filter(f -> familia==null || f.getFamiliaOlfativa()==familia).toList();
     }
 }

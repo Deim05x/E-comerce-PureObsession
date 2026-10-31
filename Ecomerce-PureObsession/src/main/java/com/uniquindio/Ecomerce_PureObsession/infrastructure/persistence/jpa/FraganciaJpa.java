@@ -11,6 +11,8 @@ public class FraganciaJpa {
     @Enumerated(EnumType.STRING) Concentracion concentracion;
     String salida, corazon, fondo;
     boolean publicada, activa;
+    @Column(nullable=false, columnDefinition="boolean default false")
+    boolean eliminada;
     public FraganciaJpa() {}
 }
 

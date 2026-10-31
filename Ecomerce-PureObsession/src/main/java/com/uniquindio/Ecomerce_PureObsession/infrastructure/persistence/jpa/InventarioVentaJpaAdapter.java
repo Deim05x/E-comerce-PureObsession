@@ -58,6 +58,9 @@ public class InventarioVentaJpaAdapter implements InventarioVentaPort {
         }
 
         if (reservar) {
+            if (botella.eliminada || botella.fragancia.eliminada || !botella.fragancia.activa) {
+                throw new ReglaDominioException("El inventario fue retirado del catalogo.");
+            }
             if (volumenReservado > botella.disponibleMl) {
                 throw new ReglaDominioException("No hay volumen disponible para la cantidad solicitada.");
             }

@@ -18,6 +18,7 @@ class ComprarUseCaseTest {
         public Presentacion guardar(Presentacion presentacion) { return presentacion; }
         public Optional<Presentacion> buscarPorId(UUID id) { return oferta.getId().equals(id) ? Optional.of(oferta) : Optional.empty(); }
         public List<Presentacion> listarPublicadas() { return List.of(oferta); }
+        public boolean estaEnCatalogo(UUID id) { return oferta.getId().equals(id); }
     };
     private final CuentaRepository cuentas = new CuentaRepository() {
         public Cuenta guardar(Cuenta cuenta) { return cuenta; }
