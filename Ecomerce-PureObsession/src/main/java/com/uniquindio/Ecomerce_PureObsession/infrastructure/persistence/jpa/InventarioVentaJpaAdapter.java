@@ -26,6 +26,13 @@ public class InventarioVentaJpaAdapter implements InventarioVentaPort {
     public void liberar(UUID presentacionId, int cantidad) {
         moverExistencias(presentacionId, cantidad, false);
     }
+    @Override public void confirmar(UUID presentacionId,int cantidad) {
+        PresentacionJpa p=entityManager.find(PresentacionJpa.class,presentacionId,LockModeType.PESSIMISTIC_WRITE);
+        if(p!=null && p.tipo!=com.uniquindio.Ecomerce_PureObsession.domain.valueObject.TipoPresentacion.DECANT) {
+            FichaProductoJpa ficha=entityManager.find(FichaProductoJpa.class,presentacionId,LockModeType.PESSIMISTIC_WRITE);
+            if(ficha!=null) ficha.reservadas=com.uniquindio.Ecomerce_PureObsession.domain.service.PoliticaMarketplace.liberar(ficha.reservadas,cantidad);
+        }
+    }
 
     private void moverExistencias(UUID presentacionId, int cantidad, boolean reservar) {
         if (presentacionId == null || cantidad <= 0) {
@@ -36,6 +43,20 @@ public class InventarioVentaJpaAdapter implements InventarioVentaPort {
                 LockModeType.PESSIMISTIC_WRITE);
         if (presentacion == null) {
             throw new RecursoNoEncontradoException("La presentación no existe.");
+        }
+        FichaProductoJpa ficha=entityManager.find(FichaProductoJpa.class,presentacionId,LockModeType.PESSIMISTIC_WRITE);
+        if(presentacion.tipo!=com.uniquindio.Ecomerce_PureObsession.domain.valueObject.TipoPresentacion.DECANT && ficha!=null) {
+            if(reservar) {
+                FraganciaJpa f=entityManager.find(FraganciaJpa.class,presentacion.fraganciaId);
+                if(!presentacion.publicada || f==null || f.eliminada || !f.activa || !f.publicada)
+                    throw new ReglaDominioException("La oferta no esta disponible.");
+                ficha.disponibles=com.uniquindio.Ecomerce_PureObsession.domain.service.PoliticaMarketplace.reservar(ficha.disponibles,cantidad);
+                ficha.reservadas=Math.addExact(ficha.reservadas,cantidad);
+            } else {
+                ficha.reservadas=com.uniquindio.Ecomerce_PureObsession.domain.service.PoliticaMarketplace.liberar(ficha.reservadas,cantidad);
+                ficha.disponibles=Math.addExact(ficha.disponibles,cantidad);
+            }
+            return;
         }
         if (presentacion.botellaMadreId == null) {
             throw new ReglaDominioException("La presentación no tiene inventario asociado.");
@@ -58,6 +79,8 @@ public class InventarioVentaJpaAdapter implements InventarioVentaPort {
         }
 
         if (reservar) {
+            if(botella.vendedorId!=null && !botella.vendedorId.equals(presentacion.vendedorId))
+                throw new ReglaDominioException("El inventario pertenece a otro vendedor.");
             if (botella.eliminada || botella.fragancia.eliminada || !botella.fragancia.activa) {
                 throw new ReglaDominioException("El inventario fue retirado del catalogo.");
             }

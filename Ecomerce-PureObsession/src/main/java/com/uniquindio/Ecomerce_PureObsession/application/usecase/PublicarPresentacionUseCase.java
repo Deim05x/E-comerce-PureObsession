@@ -30,21 +30,13 @@ public final class PublicarPresentacionUseCase implements PublicarPresentacionPo
     public Presentacion ejecutar(String actor, UUID presentacionId) {
         Presentacion presentacion = AutorizacionPresentacion.propia(
                 actor, presentacionId, cuentas, presentaciones);
-        List<BotellaMadre> asociadas = botellas.listarTodas().stream()
-                .filter(b -> b.getFragancia().getId().equals(presentacion.getFraganciaId()))
-                .toList();
-        if (asociadas.isEmpty()) {
-            throw new ReglaDominioException("La fragancia no existe.");
-        }
+        presentaciones.validarPublicacion(presentacion);
 
         boolean certificadoAprobado = certificados.buscar(presentacionId)
                 .map(c -> c.estado() == EstadoCertificado.APROBADO)
                 .orElse(false);
         presentacion.publicar(certificadoAprobado);
-        for (BotellaMadre botella : asociadas) {
-            botella.getFragancia().publicar();
-            botellas.guardar(botella);
-        }
+        // El adaptador actualiza la fragancia; no se reescriben snapshots de inventario.
         return presentaciones.guardar(presentacion);
     }
 }

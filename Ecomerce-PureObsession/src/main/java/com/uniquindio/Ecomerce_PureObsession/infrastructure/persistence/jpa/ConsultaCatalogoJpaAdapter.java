@@ -14,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ConsultaCatalogoJpaAdapter implements ConsultaCatalogoRepository {
     @PersistenceContext private EntityManager em;
     static final String FRAGANCIA_PUBLICA = "f.eliminada=false and f.activa=true and f.publicada=true "
-            + "and exists (select b.id from BotellaJpa b where b.fragancia.id=f.id and b.eliminada=false)";
+            + "and (exists (select b.id from BotellaJpa b where b.fragancia.id=f.id and b.eliminada=false) "
+            + "or exists(select pp.id from PresentacionJpa pp join FichaProductoJpa ff on ff.id=pp.id "
+            + "where pp.fraganciaId=f.id and pp.tipo<>com.uniquindio.Ecomerce_PureObsession.domain.valueObject.TipoPresentacion.DECANT))";
     static final String PRESENTACION_PUBLICA = "p.publicada=true and " + FRAGANCIA_PUBLICA
             + " and (p.botellaMadreId is null or exists (select b.id from BotellaJpa b "
             + "where b.id=p.botellaMadreId and b.fragancia.id=f.id and b.eliminada=false))";

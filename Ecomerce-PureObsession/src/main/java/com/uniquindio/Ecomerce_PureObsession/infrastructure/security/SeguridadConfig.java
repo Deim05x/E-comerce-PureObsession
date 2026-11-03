@@ -45,8 +45,16 @@ public class SeguridadConfig {
         return new SecretKeySpec(bytes,"HmacSHA256");
     }
     @Bean JwtEncoder jwtEncoder(SecretKey clave){return new NimbusJwtEncoder(new ImmutableSecret<>(clave));}
-    @Bean JwtDecoder jwtDecoder(SecretKey clave){return NimbusJwtDecoder.withSecretKey(clave).macAlgorithm(MacAlgorithm.HS256).build();}
-    @Bean SecurityFilterChain filtros(HttpSecurity http) throws Exception {
+    @Bean JwtDecoder jwtDecoder(SecretKey clave,com.uniquindio.Ecomerce_PureObsession.application.port.out.EstadoTokenPort estados){
+        NimbusJwtDecoder decoder=NimbusJwtDecoder.withSecretKey(clave).macAlgorithm(MacAlgorithm.HS256).build();
+        decoder.setJwtValidator(new org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator<>(JwtValidators.createDefault(),jwt->{
+            Object ver=jwt.getClaims().get("ver");int version=ver instanceof Number n ? n.intValue() : 0;
+            int actual=estados.version(jwt.getSubject());
+            return actual>=0 && version==actual ? org.springframework.security.oauth2.core.OAuth2TokenValidatorResult.success()
+                : org.springframework.security.oauth2.core.OAuth2TokenValidatorResult.failure(new org.springframework.security.oauth2.core.OAuth2Error("invalid_token"));
+        }));return decoder;
+    }
+    @Bean SecurityFilterChain filtros(HttpSecurity http,@org.springframework.beans.factory.annotation.Qualifier("cors") org.springframework.web.cors.CorsConfigurationSource cors) throws Exception {
         AuthenticationEntryPoint sinToken=(req,res,ex)->{res.setStatus(401);res.setContentType("application/json;charset=UTF-8");res.getWriter().write("{\"mensaje\":\"Token ausente, inválido o expirado.\"}");};
         var roles=new JwtGrantedAuthoritiesConverter();
         roles.setAuthoritiesClaimName("rol"); roles.setAuthorityPrefix("ROLE_");
@@ -54,9 +62,18 @@ public class SeguridadConfig {
         conversor.setJwtGrantedAuthoritiesConverter(roles);
         // Sin cookies ni sesión, el navegador no envía credenciales solo: CSRF no aplica a una API con Bearer.
         http.csrf(c->c.disable())
+            .cors(c->c.configurationSource(cors))
             .sessionManagement(s->s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(a->a
                 .requestMatchers(HttpMethod.POST,"/api/auth/registro","/api/auth/entrar").permitAll()
+                .requestMatchers(HttpMethod.POST,"/api/auth/recuperacion","/api/auth/restablecer").permitAll()
+                .requestMatchers(HttpMethod.POST,"/api/checkout","/api/checkout/cotizacion").permitAll()
+                .requestMatchers(HttpMethod.GET,"/api/productos/**","/api/productos","/api/tiendas/**","/api/tiendas","/api/imagenes/**").permitAll()
+                .requestMatchers(HttpMethod.GET,"/api/opciones").permitAll()
+                .requestMatchers("/api/vendedor/**").hasRole("VENDEDOR")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET,"/api/pedidos/*/seguimiento").permitAll()
+                .requestMatchers(HttpMethod.POST,"/api/pedidos/*/envios/*/recepcion","/api/demo/pedidos/*/pago").permitAll()
                 .requestMatchers(HttpMethod.GET,"/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll()
                 .requestMatchers(HttpMethod.GET,"/api/catalogo","/api/catalogo/**").permitAll()
                 // mios antes del comodín: /api/pedidos/* también coincide con /mios

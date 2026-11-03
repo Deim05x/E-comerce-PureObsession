@@ -6,4 +6,5 @@ import java.util.UUID;
 public interface InventarioVentaPort {
     void reservar(UUID presentacionId, int cantidad);
     void liberar(UUID presentacionId, int cantidad);
+    default void confirmar(UUID presentacionId,int cantidad) {}
 }

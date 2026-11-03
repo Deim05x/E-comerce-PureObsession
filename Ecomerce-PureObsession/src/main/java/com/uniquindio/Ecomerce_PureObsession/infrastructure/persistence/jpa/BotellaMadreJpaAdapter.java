@@ -15,7 +15,9 @@ public class BotellaMadreJpaAdapter implements BotellaMadreRepository {
         FraganciaJpa fragancia=em.find(FraganciaJpa.class,b.getFragancia().getId());
         if((anterior!=null && anterior.eliminada) || (fragancia!=null && fragancia.eliminada))
             throw new com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException("No se puede restaurar inventario eliminado al guardar.");
-        em.merge(BotellaMadrePersistenceMapper.aJpa(b)); return b;
+        BotellaJpa nueva=BotellaMadrePersistenceMapper.aJpa(b);
+        if(anterior!=null) nueva.vendedorId=anterior.vendedorId;
+        em.merge(nueva); return b;
     }
     public Optional<BotellaMadre> buscarPorId(UUID id) {
         return Optional.ofNullable(em.find(BotellaJpa.class,id,LockModeType.PESSIMISTIC_WRITE))

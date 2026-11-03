@@ -5,6 +5,7 @@ import java.util.*;
 @Table(name="botella")
 public class BotellaJpa {
     @Id UUID id;
+    UUID vendedorId;
     @ManyToOne(optional=false, cascade={CascadeType.PERSIST,CascadeType.MERGE}) FraganciaJpa fragancia;
     int originalMl, disponibleMl;
     @Column(nullable=false, columnDefinition="boolean default false")
