@@ -13,12 +13,13 @@ import java.util.*;
 @RestController @RequestMapping("/api")
 public class ProductosController {
     private final MarketplaceUseCase marketplace;
-    public ProductosController(MarketplaceUseCase marketplace) {this.marketplace=marketplace;}
+    private final org.springframework.core.env.Environment environment;
+    public ProductosController(MarketplaceUseCase marketplace,org.springframework.core.env.Environment environment) {this.marketplace=marketplace;this.environment=environment;}
     public record Stock(int disponible) {}
     public record ResenaRequest(int puntuacion,String comentario) {}
     @GetMapping("/opciones") public Map<String,Object> opciones() {
         return Map.of("familias",FamiliaOlfativa.values(),"concentraciones",Concentracion.values(),"presentaciones",TipoPresentacion.values(),
-                "origenes",OrigenProducto.values(),"empaques",TipoEmpaque.values(),"categorias",List.of("NICHO","DISENADOR","ARABE"));
+                "origenes",OrigenProducto.values(),"empaques",TipoEmpaque.values(),"categorias",List.of("NICHO","DISENADOR","ARABE"),"modoDemo",environment.acceptsProfiles(org.springframework.core.env.Profiles.of("demo")));
     }
     @GetMapping("/productos") public Pagina<Producto> productos(@RequestParam(required=false) String texto,
             @RequestParam(required=false) FamiliaOlfativa familia,@RequestParam(required=false) TipoPresentacion tipo,
