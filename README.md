@@ -1,5 +1,46 @@
 # Pure Obsession
 
+## Backend actual para integrar el frontend
+
+Marketplace de perfumeria con clientes, vendedores y administradores. El backend
+usa Spring Boot, puertos de aplicacion, dominio separado de JPA, JWT Bearer y H2.
+
+- Productos y tienda del vendedor, fotos, filtros y catalogo paginado.
+- Stock por unidades para perfumes/testers y por mililitros para decants.
+- Carrito, favoritos, perfil, direcciones y recuperacion de clave.
+- Checkout con importes decimales, cotizacion y reintentos idempotentes autenticados.
+- Reservas de 30 minutos, cancelacion y seguimiento de envios por vendedor.
+- Pago simulado exclusivamente en demo; confirmacion manual por ADMIN fuera de demo.
+- Certificados de originalidad, reseñas de compras entregadas y datos demo.
+
+JDK 21. Desde la carpeta `Ecomerce-PureObsession`:
+
+```powershell
+.\gradlew.bat test --no-daemon
+.\gradlew.bat bootRun --args="--spring.profiles.active=demo"
+```
+
+Swagger: `http://localhost:8080/swagger-ui/index.html`.
+Usuarios demo: admin, vendedor, vendedor2 y cliente, todos con correo
+`<usuario>@pureobsession.demo` y clave `DemoPure2026!`.
+
+La [guia de integracion del frontend](docs/backend-frontend-contrato.md) contiene
+los endpoints, cuerpos JSON, limites de imagen, configuracion de CORS/SMTP,
+contratos por pantalla y limites del MVP. Los diseños compartidos en Drive se
+usan como referencia; no se copian cifras ni badges ficticios a las respuestas.
+
+JWT reemplaza las sesiones de autenticacion: las peticiones usan Authorization
+Bearer. El cambio de clave revoca los tokens anteriores. El perfil demo no procesa
+dinero real. SMTP y la configuracion del despliegue comercial requieren valores
+del entorno; MariaDB necesita migraciones y verificacion antes de publicarse.
+
+## Documentacion historica
+
+Las secciones siguientes describen etapas anteriores, incluidas las referencias
+a sesiones, CSRF e infraestructura temporal. Para operar el backend actual
+prevalece la guia de integracion enlazada arriba. La tabla de correcciones de
+Entrega 1 debe completarse con la retroalimentacion real de la docente.
+
 ## Pedidos, arquitectura y pruebas
 
 El marketplace evoluciona hacia una arquitectura hexagonal con Spring Boot, H2, seguridad por sesión, controladores REST y persistencia JPA. El alcance nuevo de Deivid es el ciclo inicial del pedido: realizar una compra, consultar el pedido y cancelarlo antes del pago. El alcance inicial se conserva más abajo como historial, por lo que no describe el estado vigente de la API.
