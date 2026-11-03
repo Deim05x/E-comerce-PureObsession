@@ -12,7 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class PedidoJpaAdapter implements PedidoRepository {
     @PersistenceContext private EntityManager entityManager;
-    @Override public Pedido guardar(Pedido pedido) { entityManager.merge(PedidoPersistenceMapper.aJpa(pedido)); return pedido; }
+    @Override public Pedido guardar(Pedido pedido) {
+        PedidoJpa anterior=entityManager.find(PedidoJpa.class,pedido.getId());
+        PedidoJpa nuevo=PedidoPersistenceMapper.aJpa(pedido);
+        nuevo.creadoEn=anterior==null || anterior.creadoEn==null ? java.time.Instant.now() : anterior.creadoEn;
+        nuevo.reservaVenceEn=anterior==null ? nuevo.creadoEn.plusSeconds(1800) : anterior.reservaVenceEn;
+        nuevo.motivoCancelacion=anterior==null ? null : anterior.motivoCancelacion;
+        entityManager.merge(nuevo); return pedido;
+    }
     @Override public Optional<Pedido> buscarPorId(UUID id) {
         return Optional.ofNullable(entityManager.find(PedidoJpa.class, id, LockModeType.PESSIMISTIC_WRITE)).map(PedidoPersistenceMapper::aDominio);
     }

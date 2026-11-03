@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "pure-obsession": {
+      "projectType": "application", "root": "", "sourceRoot": "src", "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/pure-obsession", "index": "index.html", "browser": "src/main.ts",
+            "tsConfig": "tsconfig.app.json", "preserveSymlinks": true, "assets": [{"glob":"**/*","input":"public"}],
+            "styles": ["src/styles.css"]
+          },
+          "configurations": {
+            "production": { "outputHashing": "all", "budgets": [{"type":"initial","maximumWarning":"1MB","maximumError":"2MB"}], "optimization": {"scripts":true,"styles":true,"fonts":false} },
+            "development": { "optimization": false, "sourceMap": true, "extractLicenses": false }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server", "options": {"proxyConfig":"proxy.conf.json","port":4200},
+          "configurations": { "development": {"buildTarget":"pure-obsession:build:development"}, "production": {"buildTarget":"pure-obsession:build:production"} },
+          "defaultConfiguration": "development"
+        }
+      }
+    }
+  },
+  "cli": { "analytics": false }
+}

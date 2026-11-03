@@ -6,6 +6,9 @@ import com.uniquindio.Ecomerce_PureObsession.domain.valueObject.*;
 @Table(name="cuenta")
 public class CuentaJpa {
     @Id UUID id;
+    @Column(nullable=false,columnDefinition="integer default 0") int versionToken;
+    @Column(length=22) String telefono;
+    java.time.LocalDate nacimiento;
     String nombre;
     @Column(nullable=false,unique=true) String cedula;
     @Column(nullable=false,unique=true) String email;

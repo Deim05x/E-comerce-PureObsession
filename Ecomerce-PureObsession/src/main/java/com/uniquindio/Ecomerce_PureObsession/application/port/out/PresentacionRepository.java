@@ -6,5 +6,6 @@ public interface PresentacionRepository {
     Optional<Presentacion> buscarPorId(UUID id);
     List<Presentacion> listarPublicadas();
     boolean estaEnCatalogo(UUID id);
+    default void validarPublicacion(Presentacion p) {}
 }
 

@@ -12,6 +12,14 @@ import org.springframework.security.core.AuthenticationException;
 import java.util.*;
 @RestControllerAdvice
 public class ErroresController {
+    @ExceptionHandler(com.uniquindio.Ecomerce_PureObsession.domain.exception.ConflictoException.class)
+    public ResponseEntity<ErrorResponse> conflicto(Exception e){return error(409,e.getMessage());}
+    @ExceptionHandler(com.uniquindio.Ecomerce_PureObsession.domain.exception.AccesoProhibidoException.class)
+    public ResponseEntity<ErrorResponse> prohibido(Exception e){return error(403,e.getMessage());}
+    @ExceptionHandler(com.uniquindio.Ecomerce_PureObsession.domain.exception.ServicioNoDisponibleException.class)
+    public ResponseEntity<ErrorResponse> noDisponible(Exception e){return error(503,"El servicio no esta disponible temporalmente.");}
+    @ExceptionHandler({org.springframework.web.bind.MissingServletRequestParameterException.class,org.springframework.web.multipart.support.MissingServletRequestPartException.class})
+    public ResponseEntity<ErrorResponse> parametro(Exception e){return error(400,"Faltan datos obligatorios.");}
     public record ErrorResponse(String mensaje,Map<String,String> campos) {}
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> validacion(MethodArgumentNotValidException e) {

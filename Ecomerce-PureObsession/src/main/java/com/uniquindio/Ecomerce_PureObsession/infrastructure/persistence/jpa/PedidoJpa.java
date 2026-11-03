@@ -8,6 +8,9 @@ import java.util.*;
 @Table(name = "pedido")
 public class PedidoJpa {
     @Id UUID id;
+    java.time.Instant creadoEn,reservaVenceEn;
+    @Column(precision=14,scale=2) java.math.BigDecimal envio,regalo;
+    @Column(length=120) String motivoCancelacion;
     @Column(nullable = true) UUID clienteId;
     @Column(length = 120) String nombreEntrega;
     @Column(length = 254) String correoEntrega;

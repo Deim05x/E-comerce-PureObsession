@@ -7,7 +7,10 @@ import java.util.UUID;
 public class LineaJpa {
     UUID id, itemId, fraganciaId, vendedorId;
     String descripcion, moneda;
-    double precio;
+    @jakarta.persistence.Column(precision=14,scale=2)
+    java.math.BigDecimal precio;
     int cantidad;
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    com.uniquindio.Ecomerce_PureObsession.domain.valueObject.TipoEmpaque empaque;
     public LineaJpa() {}
 }

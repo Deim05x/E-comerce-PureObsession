@@ -12,6 +12,19 @@ public class Pedido {
     private final List<LineaPedido> lineas;
     private EstadoPedido estado;
     private Precio total;
+    private BigDecimal envio=BigDecimal.ZERO.setScale(2),regalo=BigDecimal.ZERO.setScale(2);
+    public BigDecimal getEnvio(){return envio;}
+    public BigDecimal getRegalo(){return regalo;}
+    public BigDecimal getSubtotal(){return calcularTotal(lineas).monto();}
+    public void aplicarCargos(BigDecimal envio,BigDecimal regalo) {
+        if(estado!=EstadoPedido.CREADO) throw new ReglaDominioException("El pedido ya no admite cambios de cargos.");
+        this.envio=Precio.de(envio,"COP").monto();this.regalo=Precio.de(regalo,"COP").monto();
+        total=Precio.de(getSubtotal().add(this.envio).add(this.regalo),lineas.getFirst().getPrecioUnitario().moneda());
+    }
+    public static Pedido conCargosReconstituidos(Pedido original,BigDecimal envio,BigDecimal regalo) {
+        Pedido copia=new Pedido(original.id,original.clienteId,original.entrega,original.claveConsultaHash,original.lineas,EstadoPedido.CREADO);
+        copia.aplicarCargos(envio,regalo);copia.estado=original.estado;return copia;
+    }
     private Pedido(UUID id, UUID clienteId, DatosEntrega entrega, String claveConsultaHash,
                    List<LineaPedido> lineas, EstadoPedido estado) {
         this.id = id; this.clienteId = clienteId; this.entrega = entrega; this.claveConsultaHash = claveConsultaHash;
@@ -48,7 +61,7 @@ public class Pedido {
     public void agregarLinea(LineaPedido linea) {
         if (estado != EstadoPedido.CREADO) throw new ReglaDominioException("El pedido ya no admite líneas.");
         List<LineaPedido> candidatas = new ArrayList<>(lineas); candidatas.add(linea); validarLineas(candidatas);
-        lineas.add(linea); total = calcularTotal(candidatas);
+        lineas.add(linea); total = Precio.de(calcularTotal(candidatas).monto().add(envio).add(regalo),lineas.getFirst().getPrecioUnitario().moneda());
     }
     public void confirmar() { if (estado != EstadoPedido.CREADO) throw new ReglaDominioException("Solo se confirma un pedido CREADO."); estado = EstadoPedido.CONFIRMADO; }
     public void marcarEnviado() { if (estado != EstadoPedido.CONFIRMADO) throw new ReglaDominioException("Solo un pedido CONFIRMADO puede enviarse."); estado = EstadoPedido.ENVIADO; }
@@ -73,8 +86,8 @@ public class Pedido {
     }
     private static Precio calcularTotal(List<LineaPedido> lineas) {
         BigDecimal suma = BigDecimal.ZERO;
-        for (LineaPedido linea : lineas) suma = suma.add(BigDecimal.valueOf(linea.getPrecioUnitario().precio()).multiply(BigDecimal.valueOf(linea.getCantidad())));
-        return Precio.crear(suma.doubleValue(), lineas.get(0).getPrecioUnitario().moneda());
+        for (LineaPedido linea : lineas) suma = suma.add(linea.getPrecioUnitario().monto().multiply(BigDecimal.valueOf(linea.getCantidad())));
+        return Precio.de(suma, lineas.get(0).getPrecioUnitario().moneda());
     }
     public UUID getId() { return id; }
     public UUID getClienteId() { return clienteId; }

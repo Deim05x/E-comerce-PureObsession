@@ -10,6 +10,18 @@ import java.util.*;
 public class PresentacionJpaAdapter implements PresentacionRepository {
     @PersistenceContext private EntityManager em;
     public Presentacion guardar(Presentacion p) {
+        if(p.getBotellaMadreId()!=null) {
+            BotellaJpa b=em.find(BotellaJpa.class,p.getBotellaMadreId());
+            if(b!=null && b.vendedorId!=null)
+                com.uniquindio.Ecomerce_PureObsession.domain.service.PoliticaMarketplace.propietario(b.vendedorId,p.getVendedorId());
+        }
+        if(p.isPublicada()) {
+            FraganciaJpa f=em.find(FraganciaJpa.class,p.getFraganciaId());
+            if(f!=null) {
+                if(f.eliminada || !f.activa) throw new com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException("La fragancia esta retirada.");
+                f.publicada=true;
+            }
+        }
         em.merge(PresentacionPersistenceMapper.aJpa(p)); return p;
     }
     public Optional<Presentacion> buscarPorId(UUID id) {
@@ -24,6 +36,17 @@ public class PresentacionJpaAdapter implements PresentacionRepository {
         return em.createQuery("select count(p) from PresentacionJpa p, FraganciaJpa f where f.id=p.fraganciaId and "
             + ConsultaCatalogoJpaAdapter.PRESENTACION_PUBLICA + " and p.id=:id",Long.class)
             .setParameter("id",id).getSingleResult()>0;
+    }
+    public void validarPublicacion(Presentacion p) {
+        FraganciaJpa f=em.find(FraganciaJpa.class,p.getFraganciaId());
+        if(f==null || f.eliminada || !f.activa) throw new com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException("La fragancia no esta activa.");
+        BotellaMadrePersistenceMapper.aDominio(f).publicar();
+        if(p.getBotellaMadreId()!=null) {
+            BotellaJpa b=em.find(BotellaJpa.class,p.getBotellaMadreId());
+            if(b==null || b.eliminada || !b.fragancia.id.equals(f.id))
+                throw new com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException("La botella no esta disponible.");
+            if(b.vendedorId!=null) com.uniquindio.Ecomerce_PureObsession.domain.service.PoliticaMarketplace.propietario(b.vendedorId,p.getVendedorId());
+        }
     }
 }
 

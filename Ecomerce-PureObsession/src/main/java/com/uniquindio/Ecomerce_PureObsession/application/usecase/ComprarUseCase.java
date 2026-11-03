@@ -16,10 +16,16 @@ public final class ComprarUseCase implements ComprarPort {
     private final PresentacionRepository presentaciones;
     private final PedidoRepository pedidos;
     private final InventarioVentaPort inventario;
+    private final java.math.BigDecimal tarifaEnvio,tarifaRegalo;
     public ComprarUseCase(CuentaRepository cuentas, PresentacionRepository presentaciones,
                           PedidoRepository pedidos, InventarioVentaPort inventario) {
+        this(cuentas,presentaciones,pedidos,inventario,java.math.BigDecimal.ZERO,java.math.BigDecimal.ZERO);
+    }
+    public ComprarUseCase(CuentaRepository cuentas,PresentacionRepository presentaciones,PedidoRepository pedidos,InventarioVentaPort inventario,
+            java.math.BigDecimal tarifaEnvio,java.math.BigDecimal tarifaRegalo) {
         this.cuentas = cuentas; this.presentaciones = presentaciones;
         this.pedidos = pedidos; this.inventario = inventario;
+        this.tarifaEnvio=Precio.de(tarifaEnvio,"COP").monto();this.tarifaRegalo=Precio.de(tarifaRegalo,"COP").monto();
     }
     @Override public PedidoResponse ejecutar(String actor, CrearPedidoRequest solicitud) {
         if (solicitud == null || solicitud.items() == null || solicitud.items().isEmpty())
@@ -45,14 +51,18 @@ public final class ComprarUseCase implements ComprarPort {
                     .orElseThrow(() -> new ReglaDominioException("La presentación no existe."));
             if (!oferta.isPublicada())
                 throw new ReglaDominioException("La presentación no está publicada.");
+            oferta.getTipo().validarEmpaque(item.empaque());
             inventario.reservar(oferta.getId(), item.cantidad());
             String descripcion = "Presentación " + oferta.getTipo() + " de " + oferta.getVolumenMl() + " ml";
             lineas.add(LineaPedido.crearConVendedor(UUID.randomUUID(), oferta.getId(), oferta.getFraganciaId(),
-                    oferta.getVendedorId(), descripcion, Precio.crear(oferta.getPrecio().doubleValue(), "COP"), item.cantidad()));
+                    oferta.getVendedorId(), descripcion, Precio.de(oferta.getPrecio(), "COP"), item.cantidad()).conEmpaque(item.empaque()));
         }
         String clave = cuenta == null ? ClaveConsultaPedido.nuevaClave() : null;
         Pedido pedido = Pedido.crearParaCheckout(UUID.randomUUID(), cuenta == null ? null : cuenta.getId(), entrega,
                 clave == null ? null : ClaveConsultaPedido.hash(clave), lineas);
+        long vendedores=lineas.stream().map(LineaPedido::getVendedorId).distinct().count();
+        long regalos=lineas.stream().filter(l->l.getEmpaque()==com.uniquindio.Ecomerce_PureObsession.domain.valueObject.TipoEmpaque.REGALO).mapToLong(LineaPedido::getCantidad).sum();
+        pedido.aplicarCargos(tarifaEnvio.multiply(java.math.BigDecimal.valueOf(vendedores)),tarifaRegalo.multiply(java.math.BigDecimal.valueOf(regalos)));
         pedidos.guardar(pedido);
         return PedidoResponse.desde(pedido, clave);
     }

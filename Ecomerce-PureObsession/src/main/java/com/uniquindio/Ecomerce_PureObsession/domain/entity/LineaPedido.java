@@ -10,6 +10,12 @@ public class LineaPedido {
     private final String descripcionFragrancia;
     private final Precio precioUnitario;
     private final int cantidad;
+    private com.uniquindio.Ecomerce_PureObsession.domain.valueObject.TipoEmpaque empaque=com.uniquindio.Ecomerce_PureObsession.domain.valueObject.TipoEmpaque.ESTANDAR;
+    public LineaPedido conEmpaque(com.uniquindio.Ecomerce_PureObsession.domain.valueObject.TipoEmpaque tipo) {
+        if(tipo==null) throw new ReglaDominioException("Empaque obligatorio.");
+        LineaPedido copia=new LineaPedido(id,itemId,fraganciaId,vendedorId,descripcionFragrancia,precioUnitario,cantidad);copia.empaque=tipo;return copia;
+    }
+    public com.uniquindio.Ecomerce_PureObsession.domain.valueObject.TipoEmpaque getEmpaque() {return empaque;}
 
     private LineaPedido(UUID id, UUID itemId, UUID fraganciaId, UUID vendedorId, String descripcion,
                         Precio precioUnitario, int cantidad) {
@@ -34,8 +40,8 @@ public class LineaPedido {
         if (cantidad <= 0) throw new ReglaDominioException("La cantidad debe ser mayor que cero.");
         return new LineaPedido(id, itemId, fraganciaId, vendedorId, descripcion, precioUnitario, cantidad);
     }
-    public Precio calcularSubtotal() { return Precio.crear(BigDecimal.valueOf(precioUnitario.precio())
-            .multiply(BigDecimal.valueOf(cantidad)).doubleValue(), precioUnitario.moneda()); }
+    public Precio calcularSubtotal() { return Precio.de(precioUnitario.monto()
+            .multiply(BigDecimal.valueOf(cantidad)), precioUnitario.moneda()); }
     public UUID getId() { return id; }
     public UUID getFraganciaId() { return fraganciaId; }
     public UUID getItemId() { return itemId; }
