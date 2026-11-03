@@ -11,6 +11,7 @@ public final class PedidoPersistenceMapper {
         PedidoJpa j = new PedidoJpa();
         j.id = pedido.getId(); j.clienteId = pedido.getClienteId();
         j.estado = pedido.getEstado(); j.claveConsultaHash = pedido.getClaveConsultaHash();
+        j.envio=pedido.getEnvio();j.regalo=pedido.getRegalo();
         if (pedido.getEntrega() != null) {
             j.nombreEntrega = pedido.getEntrega().nombre(); j.correoEntrega = pedido.getEntrega().correo();
             j.telefonoEntrega = pedido.getEntrega().telefono(); j.direccionEntrega = pedido.getEntrega().direccion();
@@ -19,19 +20,25 @@ public final class PedidoPersistenceMapper {
             LineaJpa l = new LineaJpa();
             l.id = linea.getId(); l.itemId = linea.getItemId(); l.fraganciaId = linea.getFraganciaId();
             l.vendedorId = linea.getVendedorId(); l.descripcion = linea.getDescripcionFragancia();
-            l.moneda = linea.getPrecioUnitario().moneda(); l.precio = linea.getPrecioUnitario().precio();
+            l.moneda = linea.getPrecioUnitario().moneda(); l.precio = linea.getPrecioUnitario().monto();
             l.cantidad = linea.getCantidad(); j.lineas.add(l);
+            l.empaque=linea.getEmpaque();
         }
         return j;
     }
 
     public static Pedido aDominio(PedidoJpa j) {
-        List<LineaPedido> lineas = j.lineas.stream().map(l -> l.vendedorId == null
-                ? LineaPedido.crear(l.id, l.itemId, l.fraganciaId, l.descripcion, Precio.crear(l.precio, l.moneda), l.cantidad)
-                : LineaPedido.crearConVendedor(l.id, l.itemId, l.fraganciaId, l.vendedorId,
-                        l.descripcion, Precio.crear(l.precio, l.moneda), l.cantidad)).toList();
-        if (j.nombreEntrega == null) return Pedido.reconstituir(j.id, j.clienteId, lineas, j.estado);
+        List<LineaPedido> lineas = j.lineas.stream().map(l -> {
+            LineaPedido linea=l.vendedorId==null
+                ? LineaPedido.crear(l.id,l.itemId,l.fraganciaId,l.descripcion,Precio.de(l.precio,l.moneda),l.cantidad)
+                : LineaPedido.crearConVendedor(l.id,l.itemId,l.fraganciaId,l.vendedorId,l.descripcion,Precio.de(l.precio,l.moneda),l.cantidad);
+            return linea.conEmpaque(l.empaque==null ? TipoEmpaque.ESTANDAR : l.empaque);
+        }).toList();
+        if (j.nombreEntrega == null) return cargos(j,Pedido.reconstituir(j.id, j.clienteId, lineas, j.estado));
         DatosEntrega entrega = new DatosEntrega(j.nombreEntrega, j.correoEntrega, j.telefonoEntrega, j.direccionEntrega);
-        return Pedido.reconstituir(j.id, j.clienteId, entrega, j.claveConsultaHash, lineas, j.estado);
+        return cargos(j,Pedido.reconstituir(j.id, j.clienteId, entrega, j.claveConsultaHash, lineas, j.estado));
+    }
+    private static Pedido cargos(PedidoJpa j,Pedido pedido) {
+        return Pedido.conCargosReconstituidos(pedido,j.envio==null ? java.math.BigDecimal.ZERO : j.envio,j.regalo==null ? java.math.BigDecimal.ZERO : j.regalo);
     }
 }

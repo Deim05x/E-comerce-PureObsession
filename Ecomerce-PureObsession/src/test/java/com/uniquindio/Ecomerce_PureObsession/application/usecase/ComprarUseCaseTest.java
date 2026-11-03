@@ -38,11 +38,22 @@ class ComprarUseCaseTest {
     }
     @Test void invitadoCompraConPrecioServidorYReservaStock() {
         var respuesta = new ComprarUseCase(cuentas, publicaciones, pedidos, stock).ejecutar(null, solicitud(2));
-        assertEquals(300000.0, respuesta.total());
+        assertEquals(new BigDecimal("300000.00"), respuesta.total());
         assertNull(respuesta.clienteId());
         assertNotNull(respuesta.claveConsulta());
         assertEquals(2, stock.disponible);
         assertEquals(EstadoPedido.CREADO, pedidos.buscarPorId(respuesta.id()).orElseThrow().getEstado());
+    }
+    @Test void calculaEnvioPorVendedorYRegaloPorUnidadConTarifasDelServidor() {
+        var caso=new ComprarUseCase(cuentas,publicaciones,pedidos,stock,new BigDecimal("15000.00"),new BigDecimal("15000.00"));
+        var solicitud=new CrearPedidoRequest("Invitado","invitado@ejemplo.com","3001234567","Calle 1",
+                List.of(new ItemCheckoutRequest(oferta.getId(),2,TipoEmpaque.REGALO)));
+        var respuesta=caso.ejecutar(null,solicitud);
+        assertEquals(new BigDecimal("300000.00"),respuesta.subtotal());
+        assertEquals(new BigDecimal("15000.00"),respuesta.envio());
+        assertEquals(new BigDecimal("30000.00"),respuesta.regalo());
+        assertEquals(new BigDecimal("345000.00"),respuesta.total());
+        assertEquals(TipoEmpaque.REGALO,respuesta.lineas().getFirst().empaque());
     }
     private static final class StockFalso implements InventarioVentaPort {
         int disponible = 4;
