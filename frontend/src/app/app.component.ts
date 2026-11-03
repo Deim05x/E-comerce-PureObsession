@@ -1,0 +1,26 @@
+import { Component, inject, signal, effect } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet, NavigationEnd } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { BrandComponent,IconComponent } from './shared/ui';
+import { SessionService,CartService,ToastService } from './core/state.service';
+import { money } from './core/domain';
+@Component({selector:'app-root',standalone:true,imports:[RouterOutlet,RouterLink,RouterLinkActive,FormsModule,BrandComponent,IconComponent],template:`
+<a href="#main" class="skip-link">Ir al contenido</a>
+@if(!panel()){
+<div class="announcement"><span>✦</span> Descubre el arte de la perfumería <span>✦</span></div>
+<header class="site-header"><div class="header-inner"><app-brand/><nav class="desktop-nav" aria-label="Navegación principal"><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Inicio</a><a routerLink="/catalogo" routerLinkActive="active">Explorar fragancias <span class="down">⌄</span></a><a routerLink="/tiendas" routerLinkActive="active">Vendedores</a></nav>
+<div class="header-actions"><button class="icon-button" aria-label="Buscar fragancias" (click)="searchOpen.set(!searchOpen())"><ui-icon name="search"/></button><a routerLink="/cuenta/favoritos" class="icon-button hide-mobile" aria-label="Mis favoritos"><ui-icon name="heart"/></a><a [routerLink]="session.user()?'/cuenta/perfil':'/acceso'" class="icon-button" aria-label="Mi cuenta"><ui-icon name="user"/></a><a routerLink="/carrito" class="bag-link" aria-label="Ver carrito"><ui-icon name="bag"/>@if(cart.count()){<span class="bag-count">{{cart.count()}}</span>}<span class="cart-total">{{money(cart.cart().subtotal)}} <small>COP</small></span></a><a [routerLink]="session.user()?.rol==='VENDEDOR'?'/vendedor':'/registro'" [queryParams]="session.user()?.rol==='VENDEDOR'?{}:{rol:'VENDEDOR'}" class="button outline small-button sell-link">{{session.user()?.rol==='VENDEDOR'?'Mi boutique':'Comenzar a vender'}}</a><button class="icon-button mobile-toggle" aria-label="Abrir menú" (click)="menuOpen.set(!menuOpen())"><ui-icon [name]="menuOpen()?'close':'menu'"/></button></div></div>
+@if(searchOpen()){<form class="header-search" (ngSubmit)="search()"><ui-icon name="search"/><input name="busqueda" [(ngModel)]="query" placeholder="Busca por fragancia o casa de perfumería" aria-label="Buscar por nombre o marca" autofocus/><button class="button text-button" type="submit">Buscar <ui-icon name="arrow"/></button></form>}
+@if(menuOpen()){<nav class="mobile-menu"><a routerLink="/">Inicio</a><a routerLink="/catalogo">Explorar fragancias</a><a routerLink="/tiendas">Vendedores</a><a routerLink="/cuenta/favoritos">Favoritos</a>@if(session.user()){<a routerLink="/cuenta/pedidos">Mis pedidos</a><button (click)="session.logout()">Cerrar sesión</button>}@else{<a routerLink="/acceso">Iniciar sesión</a>}</nav>}
+</header>}
+<main id="main"><router-outlet/></main>
+@if(!panel()){
+<footer class="footer"><div class="footer-top"><div class="footer-brand"><app-brand/><p>Un encuentro entre aromas extraordinarios<br/>y personas que los convierten en su esencia.</p><span class="eyebrow">COLOMBIA · PERFUMERÍA CON IDENTIDAD</span></div><div><h4>El universo Pure Obsession</h4><a routerLink="/catalogo">Explorar fragancias</a><a routerLink="/catalogo" [queryParams]="{tipo:'DECANT'}">Descubrir decants</a><a routerLink="/tiendas">Nuestras boutiques</a><a routerLink="/registro" [queryParams]="{rol:'VENDEDOR'}">Comenzar a vender</a></div><div><h4>Tu experiencia</h4><a routerLink="/cuenta/pedidos">Mis pedidos</a><a routerLink="/cuenta/favoritos">Mi selección favorita</a><a routerLink="/ayuda">Compras y envíos</a><a routerLink="/ayuda" fragment="autenticidad">Certificados de originalidad</a></div><div class="footer-note"><span class="serif">Una esencia.<br/><i>Una historia propia.</i></span><p>Descubre tu próxima obsesión.</p><a routerLink="/catalogo" class="round-link" aria-label="Ir al catálogo"><ui-icon name="arrow"/></a></div></div><div class="footer-bottom"><span>© {{year}} Pure Obsession</span><span>Hecho para quienes sienten diferente.</span><a routerLink="/ayuda">Información de la tienda</a></div></footer>}
+<div class="toasts" aria-live="polite">@for(message of toast.messages();track message.id){<div class="toast" [class.error]="message.error"><ui-icon [name]="message.error?'close':'check'"/><span>{{message.text}}</span><button aria-label="Cerrar notificación" (click)="toast.dismiss(message.id)"><ui-icon name="close"/></button></div>}</div>
+`})
+export class AppComponent {
+  session=inject(SessionService);cart=inject(CartService);toast=inject(ToastService);router=inject(Router);
+  searchOpen=signal(false);menuOpen=signal(false);panel=signal(false);query='';year=new Date().getFullYear();money=money;
+  constructor(){void this.session.initialize();this.router.events.subscribe(e=>{if(e instanceof NavigationEnd){this.panel.set(e.urlAfterRedirects.startsWith('/vendedor')||e.urlAfterRedirects.startsWith('/admin'));this.menuOpen.set(false);this.searchOpen.set(false);document.title='Pure Obsession · Haute Parfumerie';}});}
+  search(){void this.router.navigate(['/catalogo'],{queryParams:{texto:this.query||null}});this.searchOpen.set(false);}
+}

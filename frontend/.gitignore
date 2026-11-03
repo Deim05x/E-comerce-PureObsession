@@ -1,0 +1,7 @@
+node_modules/
+.angular/
+out-tsc/
+dist/
+.env
+.env.local
+*.tsbuildinfo
