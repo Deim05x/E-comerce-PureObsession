@@ -1,17 +1,67 @@
 import {Component,inject,ChangeDetectorRef} from '@angular/core';
-import {FormsModule} from '@angular/forms';
+import {FormBuilder,ReactiveFormsModule,Validators} from '@angular/forms';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
-import {firstValueFrom} from 'rxjs';
-import {ApiService,errorMessage} from '../core/api.service';
+import {errorMessage} from '../core/api.service';
 import {SessionService,ToastService} from '../core/state.service';
-import {Product} from '../core/models';
-@Component({standalone:true,imports:[FormsModule,RouterLink],template:`<a routerLink="/vendedor/productos" class="text-link">← Mis productos</a><h1>{{id?'Editar publicación':'Una nueva esencia'}}</h1><p>Completa la información real de tu producto. Los originales requieren certificado aprobado para publicarse.</p><form class="panel form-stack" (ngSubmit)="save()"><div class="form-grid"><label>Nombre<input name="nombre" [(ngModel)]="model.nombre" [disabled]="!!id" required></label><label>Marca<input name="marca" [(ngModel)]="model.marca" required></label><label>Precio COP<input type="number" name="precio" [(ngModel)]="model.precio" min="1" required></label><label>Categoría<select name="categoria" [(ngModel)]="model.categoria">@for(c of session.options()?.categorias;track c){<option [value]="c">{{c}}</option>}</select></label></div><label>Descripción<textarea name="descripcion" [(ngModel)]="model.descripcion" required></textarea></label>@if(!id){<div class="form-grid"><label>Familia<select name="familia" [(ngModel)]="model.familia" required>@for(c of session.options()?.familias;track c){<option [value]="c">{{c}}</option>}</select></label><label>Concentración<select name="concentracion" [(ngModel)]="model.concentracion" required>@for(c of session.options()?.concentraciones;track c){<option [value]="c">{{c}}</option>}</select></label><label>Presentación<select name="tipo" [(ngModel)]="model.tipo">@for(c of session.options()?.presentaciones;track c){<option [value]="c">{{c}}</option>}</select></label><label>Volumen ml<input type="number" name="volumen" [(ngModel)]="model.volumenMl" min="1" required></label><label>Existencias<input type="number" name="stock" [(ngModel)]="model.stock" min="0" required></label><label>Origen<select name="origen" [(ngModel)]="model.origen">@for(c of session.options()?.origenes;track c){<option [value]="c">{{c}}</option>}</select></label><label>País de origen<input name="pais" [(ngModel)]="model.paisOrigen"></label>@if(model.tipo==='DECANT'){<label>ID de botella madre<input name="botella" [(ngModel)]="model.botellaMadreId" required></label>}<label>Notas de salida<input name="salida" [(ngModel)]="model.notasSalida" required></label><label>Notas de corazón<input name="corazon" [(ngModel)]="model.notasCorazon" required></label><label>Notas de fondo<input name="fondo" [(ngModel)]="model.notasFondo" required></label></div><label class="checkbox"><input type="checkbox" name="original" [(ngModel)]="model.original"> Producto original (requiere certificado)</label>}<p class="error" role="alert">{{error}}</p><button class="button" [disabled]="busy">{{busy?'Guardando…':'Guardar borrador'}}</button></form>@if(id){<section class="panel form-stack"><h2>Publicación y documentos</h2><p>{{published?'Publicada':'Borrador'}} · Certificado: {{certificate||'Sin certificado'}}</p><label>Fotografía PNG o JPEG (máx. 5 MB)<input type="file" accept="image/png,image/jpeg" (change)="upload($event,false)"></label><label>Certificado PDF, PNG o JPEG (máx. 5 MB)<input type="file" accept="application/pdf,image/png,image/jpeg" (change)="upload($event,true)"></label><div class="row"><button class="button" type="button" [disabled]="busy" (click)="publish()">{{published?'Retirar publicación':'Publicar producto'}}</button></div></section>}`})
-export class SellerEditor{
- cdr=inject(ChangeDetectorRef);api=inject(ApiService);session=inject(SessionService);toast=inject(ToastService);router=inject(Router);id=inject(ActivatedRoute).snapshot.paramMap.get('id');busy=false;error='';published=false;certificate:string|null=null;
- model:any={nombre:'',marca:'',descripcion:'',categoria:'NICHO',familia:'AMADERADA',concentracion:'EAU_DE_PARFUM',tipo:'PERFUME',volumenMl:100,precio:0,stock:0,original:false,origen:'NACIONAL',paisOrigen:'Colombia',botellaMadreId:null,notasSalida:'',notasCorazon:'',notasFondo:''};
- constructor(){if(this.id)void this.load();}
- async load(){try{const p=await firstValueFrom(this.api.get<Product>('/vendedor/productos/'+this.id));this.model={...p,stock:p.stockDisponible};this.published=p.publicada;this.certificate=p.certificado;this.cdr.markForCheck();}catch(e){this.error=errorMessage(e);}}
- async save(){this.busy=true;this.error='';try{if(this.id)await this.api.put('/vendedor/productos/'+this.id,this.model);else{const p=await this.api.post<Product>('/vendedor/productos',this.model);this.id=p.id;await this.router.navigate(['/vendedor/productos',p.id]);await this.load();}this.toast.show('Producto guardado.');}catch(e){this.error=errorMessage(e);}finally{this.busy=false;this.cdr.markForCheck();}}
- async upload(event:Event,certificate:boolean){const file=(event.target as HTMLInputElement).files?.[0];if(!file)return;if(file.size>5*1024*1024){this.error='El archivo supera los 5 MB.';return;}this.busy=true;try{const form=new FormData();form.append('archivo',file);await this.api.post(certificate?'/presentaciones/'+this.id+'/certificado':'/vendedor/productos/'+this.id+'/imagenes',form);this.toast.show('Archivo cargado.');await this.load();}catch(e){this.error=errorMessage(e);}finally{this.busy=false;this.cdr.markForCheck();}}
- async publish(){this.busy=true;try{if(this.published)await this.api.delete('/vendedor/productos/'+this.id+'/publicacion');else await this.api.post('/presentaciones/'+this.id+'/publicacion');await this.load();this.toast.show('Publicación actualizada.');}catch(e){this.error=errorMessage(e);}finally{this.busy=false;this.cdr.markForCheck();}}
+import {SellerService} from '../core/services/seller.service';
+
+@Component({
+  standalone:true,
+  imports:[ReactiveFormsModule,RouterLink],
+  template:`
+    <a routerLink="/vendedor/productos" class="text-link">← Mis productos</a>
+    <h1>{{id?'Editar publicación':'Una nueva esencia'}}</h1>
+    <p>Completa la información real de tu producto. Los originales requieren certificado aprobado para publicarse.</p>
+    <form class="panel form-stack" [formGroup]="form" (ngSubmit)="save()">
+      <div class="form-grid row g-3">
+        <label class="col-md-6">Nombre<input class="form-control" [class.is-invalid]="invalid('nombre')" formControlName="nombre">@if(invalid('nombre')){<small class="invalid-feedback d-block">El nombre es obligatorio.</small>}</label>
+        <label class="col-md-6">Marca<input class="form-control" [class.is-invalid]="invalid('marca')" formControlName="marca">@if(invalid('marca')){<small class="invalid-feedback d-block">La marca es obligatoria.</small>}</label>
+        <label class="col-md-6">Precio COP<input class="form-control" [class.is-invalid]="invalid('precio')" type="number" formControlName="precio">@if(invalid('precio')){<small class="invalid-feedback d-block">El precio debe ser mayor que cero.</small>}</label>
+        <label class="col-md-6">Categoría<select class="form-select" formControlName="categoria">@for(c of session.options()?.categorias;track c){<option [value]="c">{{c}}</option>}</select></label>
+      </div>
+      <label>Descripción<textarea class="form-control" [class.is-invalid]="invalid('descripcion')" formControlName="descripcion"></textarea>@if(invalid('descripcion')){<small class="invalid-feedback d-block">Describe el producto.</small>}</label>
+      @if(!id){
+        <div class="form-grid row g-3">
+          <label class="col-md-6">Familia<select class="form-select" formControlName="familia">@for(c of session.options()?.familias;track c){<option [value]="c">{{c}}</option>}</select></label>
+          <label class="col-md-6">Concentración<select class="form-select" formControlName="concentracion">@for(c of session.options()?.concentraciones;track c){<option [value]="c">{{c}}</option>}</select></label>
+          <label class="col-md-6">Presentación<select class="form-select" formControlName="tipo">@for(c of session.options()?.presentaciones;track c){<option [value]="c">{{c}}</option>}</select></label>
+          <label class="col-md-6">Volumen ml<input class="form-control" [class.is-invalid]="invalid('volumenMl')" type="number" formControlName="volumenMl">@if(invalid('volumenMl')){<small class="invalid-feedback d-block">El volumen debe ser mayor que cero.</small>}</label>
+          <label class="col-md-6">Existencias<input class="form-control" [class.is-invalid]="invalid('stock')" type="number" formControlName="stock">@if(invalid('stock')){<small class="invalid-feedback d-block">Las existencias no pueden ser negativas.</small>}</label>
+          <label class="col-md-6">Origen<select class="form-select" formControlName="origen">@for(c of session.options()?.origenes;track c){<option [value]="c">{{c}}</option>}</select></label>
+          <label class="col-md-6">País de origen<input class="form-control" formControlName="paisOrigen"></label>
+          @if(form.controls.tipo.value==='DECANT'){<label class="col-md-6">ID de botella madre<input class="form-control" formControlName="botellaMadreId"></label>}
+          <label class="col-md-4">Notas de salida<input class="form-control" [class.is-invalid]="invalid('notasSalida')" formControlName="notasSalida"></label>
+          <label class="col-md-4">Notas de corazón<input class="form-control" [class.is-invalid]="invalid('notasCorazon')" formControlName="notasCorazon"></label>
+          <label class="col-md-4">Notas de fondo<input class="form-control" [class.is-invalid]="invalid('notasFondo')" formControlName="notasFondo"></label>
+        </div>
+        <label class="checkbox"><input type="checkbox" formControlName="original"> Producto original (requiere certificado)</label>
+      }
+      @if(error){<p class="error" role="alert">{{error}}</p>}
+      <button class="button btn btn-primary" type="submit" [disabled]="busy">{{busy?'Guardando…':'Guardar borrador'}}</button>
+    </form>
+    @if(id){
+      <section class="panel form-stack">
+        <h2>Publicación y documentos</h2><p>{{published?'Publicada':'Borrador'}} · Certificado: {{certificate||'Sin certificado'}}</p>
+        <label>Fotografía PNG o JPEG (máx. 5 MB)<input class="form-control" type="file" accept="image/png,image/jpeg" (change)="upload($event,false)"></label>
+        <label>Certificado PDF, PNG o JPEG (máx. 5 MB)<input class="form-control" type="file" accept="application/pdf,image/png,image/jpeg" (change)="upload($event,true)"></label>
+        <button class="button btn btn-outline-primary" type="button" [disabled]="busy" (click)="publish()">{{published?'Retirar publicación':'Publicar producto'}}</button>
+      </section>
+    }
+  `
+})
+export class SellerEditor {
+  private fb=inject(FormBuilder);private seller=inject(SellerService);private cdr=inject(ChangeDetectorRef);
+  session=inject(SessionService);private toast=inject(ToastService);private router=inject(Router);
+  id=inject(ActivatedRoute).snapshot.paramMap.get('id');busy=false;error='';published=false;certificate:string|null=null;
+  form=this.fb.nonNullable.group({
+    nombre:['',[Validators.required,Validators.maxLength(160)]],marca:['',[Validators.required,Validators.maxLength(120)]],descripcion:['',[Validators.required,Validators.maxLength(1000)]],categoria:['NICHO',Validators.required],
+    familia:['AMADERADA',Validators.required],concentracion:['EAU_DE_PARFUM',Validators.required],tipo:['PERFUME',Validators.required],volumenMl:[100,[Validators.required,Validators.min(1)]],precio:[0,[Validators.required,Validators.min(1)]],stock:[0,[Validators.required,Validators.min(0)]],
+    original:[false],origen:['NACIONAL',Validators.required],paisOrigen:['Colombia',[Validators.required,Validators.maxLength(100)]],botellaMadreId:[''],notasSalida:['',[Validators.required,Validators.maxLength(300)]],notasCorazon:['',[Validators.required,Validators.maxLength(300)]],notasFondo:['',[Validators.required,Validators.maxLength(300)]]
+  });
+  constructor(){if(this.id){this.form.controls.nombre.disable();void this.load();}}
+  invalid(name:keyof typeof this.form.controls){const control=this.form.controls[name];return control.touched&&control.invalid;}
+  async load(){if(!this.id)return;try{const p=await this.seller.product(this.id);this.form.patchValue({...p,stock:p.stockDisponible} as never);this.published=p.publicada;this.certificate=p.certificado;}catch(e){this.error=errorMessage(e);}finally{this.cdr.markForCheck();}}
+  async save(){this.form.markAllAsTouched();this.error='';if(this.form.invalid){this.error='Revisa los campos marcados antes de guardar.';return;}this.busy=true;try{const data=this.form.getRawValue();if(this.id)await this.seller.updateProduct(this.id,data);else{const p=await this.seller.createProduct(data);this.id=p.id;await this.router.navigate(['/vendedor/productos',p.id]);await this.load();}this.toast.show('Producto guardado.');}catch(e){this.error=errorMessage(e);this.toast.show(this.error,true);}finally{this.busy=false;this.cdr.markForCheck();}}
+  async upload(event:Event,certificate:boolean){const file=(event.target as HTMLInputElement).files?.[0];if(!file||!this.id)return;if(file.size>5*1024*1024){this.error='El archivo supera los 5 MB.';return;}this.busy=true;try{if(certificate)await this.seller.uploadCertificate(this.id,file);else await this.seller.uploadImage(this.id,file);this.toast.show('Archivo cargado.');await this.load();}catch(e){this.error=errorMessage(e);}finally{this.busy=false;this.cdr.markForCheck();}}
+  async publish(){if(!this.id)return;this.busy=true;try{if(this.published)await this.seller.unpublish(this.id);else await this.seller.publish(this.id);await this.load();this.toast.show('Publicación actualizada.');}catch(e){this.error=errorMessage(e);}finally{this.busy=false;this.cdr.markForCheck();}}
 }

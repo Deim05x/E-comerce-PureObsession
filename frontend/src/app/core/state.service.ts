@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService, errorMessage } from './api.service';
 import { User,Product,Cart,Page,Options } from './models';
 import { sanitizeLocalCart,LocalLine } from './domain';
+import { AuthService } from './services/auth.service';
 
 @Injectable({providedIn:'root'})
 export class ToastService {
@@ -13,25 +14,25 @@ export class ToastService {
 }
 @Injectable({providedIn:'root'})
 export class SessionService {
-  private api=inject(ApiService);private router=inject(Router);
+  private api=inject(ApiService);private auth=inject(AuthService);private router=inject(Router);private toast=inject(ToastService);
   user=signal<User|null>(null);options=signal<Options|null>(null);
   loggedIn=computed(()=>!!this.user());
   constructor(){
-    try {const saved=sessionStorage.getItem('po-user');if(saved&&Date.parse(sessionStorage.getItem('po-expiry')??'')>Date.now())this.user.set(JSON.parse(saved));else this.clear();}catch{this.clear();}
-    window.addEventListener('po-session-expired',()=>{if(this.user()){this.clear();void this.router.navigate(['/acceso'],{queryParams:{volver:this.router.url}});}});
+    try {const saved=localStorage.getItem('po-user');if(saved&&Date.parse(localStorage.getItem('po-expiry')??'')>Date.now())this.user.set(JSON.parse(saved));else this.clear();}catch{this.clear();}
+    window.addEventListener('po-session-expired',()=>{if(this.user()){const volver=this.router.url;this.clear();this.toast.show('Tu sesión expiró. Inicia sesión nuevamente.',true);void this.router.navigate(['/acceso'],{queryParams:{volver}});}});
   }
   async initialize(){
     try{this.options.set(await firstValueFrom(this.api.get<Options>('/opciones')));}catch{/* La pagina muestra su propio estado de conexion. */}
-    if(this.user())try{const user=await firstValueFrom(this.api.get<User>('/perfil'));this.saveUser(user);}catch{this.clear();}
+    if(this.user())try{const user=await firstValueFrom(this.auth.profile());this.saveUser(user);}catch{this.clear();}
   }
   async login(email:string,clave:string){
-    const response=await this.api.post<{token:string;expiraEn:string}>('/auth/entrar',{email,clave});
-    sessionStorage.setItem('po-token',response.token);sessionStorage.setItem('po-expiry',response.expiraEn);
-    const user=await firstValueFrom(this.api.get<User>('/perfil'));this.saveUser(user);return user;
+    const response=await this.auth.login(email,clave);
+    localStorage.setItem('po-token',response.token);localStorage.setItem('po-expiry',response.expiraEn);
+    const user=await firstValueFrom(this.auth.profile(response.token));this.saveUser(user);return user;
   }
-  saveUser(user:User){this.user.set(user);sessionStorage.setItem('po-user',JSON.stringify(user));}
-  clear(){this.user.set(null);sessionStorage.removeItem('po-token');sessionStorage.removeItem('po-user');sessionStorage.removeItem('po-expiry');}
-  logout(){this.clear();void this.router.navigate(['/']);}
+  saveUser(user:User){this.user.set(user);localStorage.setItem('po-user',JSON.stringify(user));}
+  clear(){this.user.set(null);localStorage.removeItem('po-token');localStorage.removeItem('po-user');localStorage.removeItem('po-expiry');}
+  logout(){this.clear();this.toast.show('Sesión cerrada correctamente.');void this.router.navigate(['/']);}
 }
 @Injectable({providedIn:'root'})
 export class CartService {

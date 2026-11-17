@@ -3,7 +3,8 @@ import { ActivatedRoute,RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Product,Page,Review,emptyPage } from '../core/models';
-import { ApiService,resource,errorMessage } from '../core/api.service';
+import { resource,errorMessage } from '../core/api.service';
+import { CatalogService } from '../core/services/catalog.service';
 import { CartService,FavoritesService,SessionService,ToastService } from '../core/state.service';
 import { ProductImageComponent,IconComponent,ProductCardComponent,StateComponent } from '../shared/ui';
 import { money,label,date,initials } from '../core/domain';
@@ -20,13 +21,13 @@ import { money,label,date,initials } from '../core/domain';
 <section class="section"><div class="section-heading"><div><span class="eyebrow">SIGUE DESCUBRIENDO</span><h2>Más de esta <em>boutique.</em></h2></div><a [routerLink]="['/tienda',p.vendedorId]" class="text-link">Ver la tienda <ui-icon name="arrow"/></a></div><div class="product-grid">@for(item of related.data().contenido;track item.id){@if(item.id!==p.id){<product-card [product]="item"/>}}</div></section>}
 </div>`})
 export class ProductPage {
-  private route=inject(ActivatedRoute);private api=inject(ApiService);private toast=inject(ToastService);
+  private route=inject(ActivatedRoute);private catalog=inject(CatalogService);private toast=inject(ToastService);
   params=toSignal(this.route.paramMap,{initialValue:this.route.snapshot.paramMap});id=computed(()=>this.params().get('id')!);
-  product=resource<Product|null>(()=>'/productos/'+this.id(),null);
-  variants=resource<Page<Product>>(()=>{const p=this.product.data();return p?'/productos?fraganciaId='+p.fraganciaId+'&vendedorId='+p.vendedorId+'&tamanio=100':null;},emptyPage<Product>());
-  related=resource<Page<Product>>(()=>{const p=this.product.data();return p?'/productos?vendedorId='+p.vendedorId+'&tamanio=4':null;},emptyPage<Product>());
-  reviews=resource<Review[]>(()=>'/productos/'+this.id()+'/resenas',[]);
+  product=resource<Product|null>(()=>this.catalog.product(this.id()),null);
+  variants=resource<Page<Product>>(()=>{const p=this.product.data();return p?this.catalog.products({fraganciaId:p.fraganciaId,vendedorId:p.vendedorId,tamanio:100}):null;},emptyPage<Product>());
+  related=resource<Page<Product>>(()=>{const p=this.product.data();return p?this.catalog.products({vendedorId:p.vendedorId,tamanio:4}):null;},emptyPage<Product>());
+  reviews=resource<Review[]>(()=>this.catalog.reviews(this.id()),[]);
   cart=inject(CartService);favorites=inject(FavoritesService);session=inject(SessionService);quantity=signal(1);imageIndex=signal(0);reviewBusy=signal(false);score=5;comment='';money=money;label=label;date=date;initials=initials;
   constructor(){effect(()=>{this.id();this.quantity.set(1);this.imageIndex.set(0);});}
-  async review(id:string){this.reviewBusy.set(true);try{await this.api.put('/productos/'+id+'/resena',{puntuacion:Number(this.score),comentario:this.comment});this.toast.show('Gracias por compartir tu experiencia.');this.reviews.reload();this.product.reload();this.comment='';}catch(e){this.toast.show(errorMessage(e),true);}finally{this.reviewBusy.set(false);}}
+  async review(id:string){this.reviewBusy.set(true);try{await this.catalog.saveReview(id,Number(this.score),this.comment);this.toast.show('Gracias por compartir tu experiencia.');this.reviews.reload();this.product.reload();this.comment='';}catch(e){this.toast.show(errorMessage(e),true);}finally{this.reviewBusy.set(false);}}
 }

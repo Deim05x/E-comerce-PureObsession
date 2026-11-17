@@ -24,7 +24,7 @@ public class PerfilJpaAdapter implements PerfilRepository,EstadoTokenPort {
     private final PasswordEncoder encoder;private final ObjectProvider<JavaMailSender> correo;private final Environment env;
     private final String url,desde;
     public PerfilJpaAdapter(PasswordEncoder encoder,ObjectProvider<JavaMailSender> correo,Environment env,
-            @Value("${app.recuperacion.url:http://localhost:5173/restablecer}") String url,@Value("${app.correo.desde:}") String desde) {
+            @Value("${app.recuperacion.url:http://localhost:4200/restablecer}") String url,@Value("${app.correo.desde:}") String desde) {
         this.encoder=encoder;this.correo=correo;this.env=env;this.url=url;this.desde=desde;
     }
     private Optional<CuentaJpa> buscar(String email) {
