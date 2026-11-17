@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(properties={"spring.datasource.url=jdbc:h2:mem:consultas-http;DB_CLOSE_DELAY=-1","spring.jpa.hibernate.ddl-auto=create-drop","app.admin.email=","app.admin.clave="})
-@SuppressWarnings({"removal","deprecation"})
+@SuppressWarnings({"deprecation"})
 class ConsultasCatalogoHttpTest {
     @Autowired WebApplicationContext contexto;
     @Autowired BotellaMadreRepository botellas;

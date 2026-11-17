@@ -3,8 +3,6 @@ package com.uniquindio.Ecomerce_PureObsession.application.usecase;
 import com.uniquindio.Ecomerce_PureObsession.domain.exception.ReglaDominioException;
 import com.uniquindio.Ecomerce_PureObsession.application.dto.request.ConsultarCatalogoRequest;
 import com.uniquindio.Ecomerce_PureObsession.application.dto.response.FraganciaCatalogoResponse;
-import com.uniquindio.Ecomerce_PureObsession.domain.entity.BotellaMadre;
-import com.uniquindio.Ecomerce_PureObsession.domain.entity.Fragancia;
 import com.uniquindio.Ecomerce_PureObsession.domain.repository.BotellaMadreRepository;
 
 import java.util.List;
