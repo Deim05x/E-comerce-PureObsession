@@ -33,7 +33,7 @@ el frontend debe indicar pago de demostracion o pago manual, segun el perfil.
 - Cabecera para peticiones autenticadas: `Authorization: Bearer <token>`.
 - Al expirar el JWT, iniciar sesion de nuevo. Cerrar sesion en el frontend elimina
   su token. Cambiar/restablecer la clave invalida los tokens anteriores en el servidor.
-- CORS permite localhost:5173 y localhost:3000; configurar `FRONTEND_ORIGENES`
+- CORS permite por defecto Angular en localhost/127.0.0.1:4200 y conserva 5173/3000; configurar `FRONTEND_ORIGENES` para otros dominios.
   con los origenes reales separados por coma. No usa cookies ni allowCredentials.
 - Errores: 400 formato/campos; 401 token; 403 rol/propiedad; 404 inexistente;
   409 duplicado/conflicto; 422 regla de negocio; 413 archivo grande;

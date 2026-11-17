@@ -5,7 +5,7 @@ import org.springframework.web.cors.*;
 import java.util.*;
 @Configuration
 public class CorsConfig {
-    @Bean CorsConfigurationSource cors(@Value("${app.cors.origenes:http://localhost:5173,http://localhost:3000}") String origenes) {
+    @Bean CorsConfigurationSource cors(@Value("${app.cors.origenes:http://localhost:4200,http://127.0.0.1:4200,http://localhost:5173,http://localhost:3000}") String origenes) {
         CorsConfiguration c=new CorsConfiguration();
         c.setAllowedOrigins(Arrays.stream(origenes.split(",")).map(String::trim).filter(s->!s.isBlank()).toList());
         c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));

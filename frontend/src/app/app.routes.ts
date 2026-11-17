@@ -3,6 +3,12 @@ import { Routes,CanActivateFn,Router } from '@angular/router';
 import { SessionService } from './core/state.service';
 
 const accountGuard:CanActivateFn=(_,state)=>inject(SessionService).user()?true:inject(Router).createUrlTree(['/acceso'],{queryParams:{volver:state.url}});
+const guestGuard:CanActivateFn=()=>{
+  const session=inject(SessionService),router=inject(Router),user=session.user();
+  if(!user)return true;
+  const destination=user.rol==='VENDEDOR'?'/vendedor':user.rol==='ADMIN'?'/admin':'/cuenta/perfil';
+  return router.createUrlTree([destination]);
+};
 const roleGuard:CanActivateFn=(route,state)=>{
   const session=inject(SessionService),router=inject(Router),user=session.user();
   if(!user)return router.createUrlTree(['/acceso'],{queryParams:{volver:state.url}});
@@ -14,9 +20,9 @@ export const routes:Routes=[
   {path:'producto/:id',loadComponent:()=>import('./pages/product').then(m=>m.ProductPage)},
   {path:'tiendas',loadComponent:()=>import('./pages/storefront').then(m=>m.ShopsPage)},
   {path:'tienda/:id',loadComponent:()=>import('./pages/storefront').then(m=>m.ShopPage)},
-  {path:'acceso',loadComponent:()=>import('./pages/auth').then(m=>m.AuthPage),data:{view:'login'}},
-  {path:'registro',loadComponent:()=>import('./pages/auth').then(m=>m.AuthPage),data:{view:'register'}},
-  {path:'recuperar',loadComponent:()=>import('./pages/auth').then(m=>m.AuthPage),data:{view:'recover'}},
+  {path:'acceso',canActivate:[guestGuard],loadComponent:()=>import('./pages/auth').then(m=>m.AuthPage),data:{view:'login'}},
+  {path:'registro',canActivate:[guestGuard],loadComponent:()=>import('./pages/auth').then(m=>m.AuthPage),data:{view:'register'}},
+  {path:'recuperar',canActivate:[guestGuard],loadComponent:()=>import('./pages/auth').then(m=>m.AuthPage),data:{view:'recover'}},
   {path:'restablecer',loadComponent:()=>import('./pages/auth').then(m=>m.AuthPage),data:{view:'reset'}},
   {path:'carrito',loadComponent:()=>import('./pages/checkout').then(m=>m.CartPage)},
   {path:'checkout',loadComponent:()=>import('./pages/checkout').then(m=>m.CheckoutPage)},

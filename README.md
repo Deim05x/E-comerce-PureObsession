@@ -1,5 +1,68 @@
 # Pure Obsession
 
+## Entrega 3 — Frontend Angular
+
+Pure Obsession es un marketplace colombiano especializado en perfumes, decants y testers. El sistema conecta clientes, vendedores y administradores mediante un frontend Angular y una API Spring Boot con JWT.
+
+### Integrantes y áreas
+
+- Deivid Canan: checkout, pedidos, cancelaciones, documentación e integración frontend.
+- Brayan Córdoba: inventario, persistencia y catálogo.
+- Juan Barrero: autenticación, autorización y seguridad.
+
+### Ejecutar el proyecto completo
+
+Requisitos: JDK 21, Node.js compatible con Angular 21 y npm.
+
+Terminal 1 — backend:
+
+```powershell
+cd Ecomerce-PureObsession
+.\gradlew.bat bootRun --args="--spring.profiles.active=demo"
+```
+
+Terminal 2 — frontend:
+
+```powershell
+cd frontend
+npm ci
+npm start
+```
+
+- Frontend: `http://localhost:4200`
+- Backend: `http://localhost:8080`
+- Swagger: `http://localhost:8080/swagger-ui/index.html`
+
+### Usuarios de demostración
+
+Todos usan la clave `DemoPure2026!`.
+
+| Rol | Correo |
+|---|---|
+| Administrador | `admin@pureobsession.demo` |
+| Vendedor | `vendedor@pureobsession.demo` |
+| Segundo vendedor | `vendedor2@pureobsession.demo` |
+| Cliente | `cliente@pureobsession.demo` |
+
+### Pantallas principales
+
+- Inicio, catálogo paginado, búsqueda y detalle de producto.
+- Directorio y detalle de boutiques.
+- Acceso, registro y recuperación de contraseña.
+- Carrito, checkout, seguimiento y cancelación de pedidos.
+- Perfil, favoritos y pedidos del cliente.
+- Panel del vendedor, inventario, productos, ventas y envíos.
+- Publicación de productos, imágenes y certificados.
+- Panel administrativo para certificados y confirmaciones de pago.
+
+### Verificación del frontend
+
+```powershell
+cd frontend
+npm test
+npm run build
+```
+
 ## Backend actual para integrar el frontend
 
 Marketplace de perfumeria con clientes, vendedores y administradores. El backend
