@@ -30,8 +30,9 @@ class DatosDemoInicializadorTest {
         var vendedor=cuentas.buscarPorEmail("vendedor@pureobsession.demo").orElseThrow();
         assertTrue(encoder.matches("DemoPure2026!",vendedor.getClaveHash()));
         assertEquals(Rol.VENDEDOR,cuentas.buscarPorEmail("vendedor2@pureobsession.demo").orElseThrow().getRol());
-        assertEquals(3,consultas.buscarFragancias(null,null,0,20).totalElementos());
-        assertEquals(4,consultas.buscarPresentaciones(null,null,0,20).totalElementos());
+        assertEquals(53,consultas.buscarFragancias(null,null,0,20).totalElementos());
+        assertEquals(54,consultas.buscarPresentaciones(null,null,0,20).totalElementos());
+        assertEquals(50L,em.createQuery("select count(f) from FotoProductoJpa f",Long.class).getSingleResult());
         assertEquals(5,pedidos.listarPorCliente(DatosDemoInicializador.id("cliente")).size());
         var ranking=consultas.ranking(10);
         assertEquals(2,ranking.size()); assertEquals("Rosa de Jardin",ranking.getFirst().nombre());
@@ -46,6 +47,7 @@ class DatosDemoInicializadorTest {
         em.flush(); em.clear();
         assertEquals(disponible-10,botellas.buscarPorId(botellaId).orElseThrow().getVolumenDisponible().mililitros());
         assertEquals(4L,em.createQuery("select count(c) from CuentaJpa c",Long.class).getSingleResult());
+        assertEquals(50L,em.createQuery("select count(f) from FotoProductoJpa f",Long.class).getSingleResult());
         assertEquals(5,pedidos.listarPorCliente(DatosDemoInicializador.id("cliente")).size());
     }
 }
