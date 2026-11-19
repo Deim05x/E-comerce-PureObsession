@@ -55,6 +55,12 @@ Todos usan la clave `DemoPure2026!`.
 - Publicación de productos, imágenes y certificados.
 - Panel administrativo para certificados y confirmaciones de pago.
 
+### Catálogo visual de demostración
+
+El perfil `demo` incorpora 50 fragancias de autor Pure Obsession con fotografía, descripción, familia olfativa, notas, precio y existencias. Las referencias comerciales se usan únicamente para describir la inspiración olfativa: los productos no se presentan como originales ni afiliados a esas marcas.
+
+Las imágenes se cargan desde `Ecomerce-PureObsession/src/main/resources/demo/perfumes` y se guardan de forma idempotente en H2. El frontend sigue consultando el catálogo real mediante `GET /api/productos`; no contiene una lista de productos escrita a mano. Si la base demo ya existe, basta con reiniciar el backend para agregar los productos o imágenes que falten sin restaurar el inventario modificado.
+
 ### Verificación del frontend
 
 ```powershell
